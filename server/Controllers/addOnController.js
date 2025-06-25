@@ -1,4 +1,6 @@
 import Addon from "../models/AddOn";
+import { authenticate } from "../middlewares/authMiddleware";
+import { authorize } from "../middlewares/authorize";
 
 function getCurrentDate() {
   return new Date().toISOString().split("T")[0];

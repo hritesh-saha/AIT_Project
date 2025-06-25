@@ -1,5 +1,5 @@
 import express from "express";
-import { createSale, getAllSales } from "../Controllers/salesController.js"
+import { createSale, getAllSales, getRealTimeSalesAnalytics } from "../Controllers/salesController.js"
 
 const router = express.Router();
 
@@ -8,5 +8,8 @@ router.post("/", createSale);
 
 // GET: Fetch all sales records, sorted by newest first
 router.get("/", getAllSales);
+
+// GET: Fetch all sales records for last 1 hour, 6 hours and 24 hours
+router.get("/sales/analytics/realtime", getRealTimeSalesAnalytics);
 
 export default router;

@@ -65,3 +65,48 @@ export const getAllSales = async (req, res) => {
     res.status(500).json({ message: "❌ Error fetching sales", error: err.message });
   }
 };
+
+export const getRealTimeSalesAnalytics = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const oneHourAgo = new Date(now.getTime() - 1 * 60 * 60 * 1000);
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    const getStats = async (fromTime) => {
+      const pipeline = [
+        {
+          $match: {
+            createdAt: { $gte: fromTime }
+          }
+        },
+        { $unwind: "$items" },
+        {
+          $group: {
+            _id: null,
+            total_sales: { $sum: 1 },
+            total_items_sold: { $sum: "$items.quantity_sold" },
+            total_revenue: { $sum: "$items.total_price" }
+          }
+        }
+      ];
+
+      const result = await Sale.aggregate(pipeline);
+      return result[0] || { total_sales: 0, total_items_sold: 0, total_revenue: 0 };
+    };
+
+    const lastHourStats = await getStats(oneHourAgo);
+    const last6HoursStats = await getStats(sixHoursAgo);
+    const lastDayStats = await getStats(oneDayAgo);
+
+    res.json({
+      last_hour: lastHourStats,
+      last_6_hours: last6HoursStats,
+      last_24_hours: lastDayStats
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: "❌ Error fetching real-time analytics", error: err.message });
+  }
+};

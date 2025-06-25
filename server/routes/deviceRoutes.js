@@ -22,6 +22,6 @@ router.get("/:uid", getDeviceByUid);
 router.delete("/:uid", deleteDeviceByUid);
 
 // Update stock quantity for a device by UID
-router.patch("/update-stock/:uid", updateDeviceStock);
+router.patch("/:uid/stock", updateDeviceStock);
 
 export default router;

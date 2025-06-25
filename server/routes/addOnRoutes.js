@@ -11,10 +11,10 @@ import {
 const router = express.Router();
 
 // Create a new addon
-router.post("/addOn", addAddon);
+router.post("/", addAddon);
 
 // Get list of addons with optional filtering & pagination
-router.get("/addOns", getAddons);
+router.get("/", getAddons);
 
 // Get a single addon by UID
 router.get("/:uid", getAddonByUid);
@@ -23,6 +23,6 @@ router.get("/:uid", getAddonByUid);
 router.delete("/:uid", deleteAddonByUid);
 
 // Update stock quantity for an addon by UID
-router.patch("/update-stock/:uid", updateAddonStock);
+router.patch("/:uid/stock", updateAddonStock);
 
 export default router;

@@ -12,6 +12,9 @@ function getCurrentTime() {
 
 const baseDeviceSchema = new mongoose.Schema({
   name: String,
+  color: String,
+  cost_price: Number,
+  sales_price: Number,
   uid: { type: String, unique: true, default: () => uuidv4() },
   date: { type: String, default: getCurrentDate },
   time: { type: String, default: getCurrentTime },
