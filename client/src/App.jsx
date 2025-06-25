@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Routes, Route, Link} from "react-router-dom";
 import AuthForm from './components/AuthForm';
 import OwnerDashboard from './components/OwnerDashboard';
 import CashierForm from './components/CashierForm';
+import OwnerDeviceManager from './components/OwnerDeviceManager';
 function App() {
   const [count, setCount] = useState(0)
 
@@ -16,6 +17,7 @@ function App() {
           <Route path='/' exact element={<AuthForm/>}/>
           <Route path="/owner-dashboard" exact element={<OwnerDashboard/>}/>
           <Route path='/cashier-form' exact element={<CashierForm/>}/>
+          <Route path="/owner-device-manager" exact element={<OwnerDeviceManager/>}/>
         </Routes>
       </Router>
     </div>

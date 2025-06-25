@@ -28,6 +28,7 @@ const saleSchema = new mongoose.Schema({
     required: true,
     validate: v => Array.isArray(v) && v.length > 0
   },
+  total_price: Number,
   payment_method: {
     type: String,
     required: true
