@@ -7,6 +7,7 @@ const addonSchema = new mongoose.Schema({
     enum: ["Headphone", "Charger", "Power Bank", "Mouse", "Screen Guard"],
     required: true,
   },
+  price: Number,
   compatibility: [String],             // e.g., ["Mobile", "Laptop"]
   related_device_uids: [String],       // UIDs of devices this addon is related to
   sold_standalone: { type: Number, default: 0 },
