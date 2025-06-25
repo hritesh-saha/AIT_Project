@@ -10,6 +10,6 @@ router.post("/", createSale);
 router.get("/", getAllSales);
 
 // GET: Fetch all sales records for last 1 hour, 6 hours and 24 hours
-router.get("/sales/analytics/realtime", getRealTimeSalesAnalytics);
+router.get("/analytics/realtime", getRealTimeSalesAnalytics);
 
 export default router;

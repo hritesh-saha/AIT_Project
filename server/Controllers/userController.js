@@ -42,16 +42,17 @@ export const registerUser = async (req, res) => {
 //Login existing User
 export const loginUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, role } = req.body;
 
-    const user = await User.findOne({ username });
+    // Find user by username and role
+    const user = await User.findOne({ username, role });
     if (!user) {
-      return res.status(401).json({ message: "Invalid username or password" });
+      return res.status(401).json({ message: "Invalid username, role, or password" });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      return res.status(401).json({ message: "Invalid username or password" });
+      return res.status(401).json({ message: "Invalid username, role, or password" });
     }
 
     const token = generateToken(user);
@@ -71,35 +72,54 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// Get all users
+// GET /api/users?role=cashier
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    const { role } = req.query;
+    const filter = role ? { role } : {}; // if role provided, filter by it
+
+    const users = await User.find(filter).select("-password");
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: "Error fetching users", error: err.message });
   }
 };
 
-// Update user (role or password)
+// Update user (only if role is 'cashier')
 export const updateUser = async (req, res) => {
   try {
     const { username } = req.params;
     const { password, role } = req.body;
 
     const user = await User.findOne({ username });
-    if (!user) return res.status(404).json({ message: "User not found" });
 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Only allow update if user is a cashier
+    if (user.role !== "cashier") {
+      return res.status(403).json({ message: "Only cashiers can be updated" });
+    }
+
+    // Perform updates
     if (password) user.password = await bcrypt.hash(password, 10);
     if (role) user.role = role;
 
     await user.save();
 
-    res.json({ message: "User updated", user: { username: user.username, role: user.role } });
+    res.json({
+      message: "User updated",
+      user: {
+        username: user.username,
+        role: user.role
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: "Error updating user", error: err.message });
   }
 };
+
 
 // Delete user
 export const deleteUser = async (req, res) => {
