@@ -7,6 +7,7 @@ import AuthForm from './components/AuthForm';
 import OwnerDashboard from './components/OwnerDashboard';
 import CashierForm from './components/CashierForm';
 import OwnerDeviceManager from './components/OwnerDeviceManager';
+import OwnerCashierManager from './components/OwnerCashierManager';
 function App() {
   const [count, setCount] = useState(0)
 
@@ -18,6 +19,7 @@ function App() {
           <Route path="/owner-dashboard" exact element={<OwnerDashboard/>}/>
           <Route path='/cashier-form' exact element={<CashierForm/>}/>
           <Route path="/owner-device-manager" exact element={<OwnerDeviceManager/>}/>
+          <Route path='/owner-cashier-manager' exact element={<OwnerCashierManager/>}/>
         </Routes>
       </Router>
     </div>

@@ -20,7 +20,7 @@ const AuthForm = () => {
     e.preventDefault();
     try {
       // Send role along with username and password to backend
-      const { data } = await axios.post("/api/users/login", form);
+      const { data } = await axios.post("http://localhost:5000/api/users/login", form);
 
       setMessage(data.message);
       localStorage.setItem("token", data.token);
@@ -31,10 +31,7 @@ const AuthForm = () => {
           navigate("/owner-dashboard");
           break;
         case "cashier":
-          navigate("/cashier-dashboard");
-          break;
-        case "stock_manager":
-          navigate("/stock-dashboard");
+          navigate("/cashier-form");
           break;
         default:
           setMessage("Unknown role");
@@ -81,7 +78,6 @@ const AuthForm = () => {
           className="w-full p-2 mb-6 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 cursor-pointer"
         >
           <option value="cashier">Cashier</option>
-          <option value="stock_manager">Stock Manager</option>
           <option value="owner">Owner</option>
         </select>
 

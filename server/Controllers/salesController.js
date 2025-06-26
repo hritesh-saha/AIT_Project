@@ -1,7 +1,40 @@
-import Sale from "../models/SalesSchema.js";
-import Device from "../models/BaseDevice.js";
+import Device from '../models/BaseDevice.js';
+import Sale from '../models/SalesSchema.js';
 
-// POST: Record a new sale
+// Helper function to update also_bought_together field
+async function updateAlsoBoughtTogether(items) {
+  // Group items by device_type
+  const devicesByType = items.reduce((acc, item) => {
+    if (!acc[item.device_type]) acc[item.device_type] = new Set();
+    acc[item.device_type].add(item.name);
+    return acc;
+  }, {});
+
+  const mainDevices = ["Mobile", "Laptop", "Tablet"];
+  const accessories = [...(devicesByType["Addon"] || [])];
+
+  // Update main devices with accessories in also_bought_together
+  for (const devType of mainDevices) {
+    if (!devicesByType[devType]) continue;
+
+    for (const deviceName of devicesByType[devType]) {
+      await Device.updateOne(
+        { name: deviceName },
+        { $addToSet: { also_bought_together: { $each: accessories } } }
+      );
+    }
+  }
+
+  // Optionally, update accessories with main devices they were bought with
+  for (const accName of accessories) {
+    const allMainDevices = mainDevices.flatMap(t => [...(devicesByType[t] || [])]);
+    await Device.updateOne(
+      { name: accName },
+      { $addToSet: { also_bought_together: { $each: allMainDevices } } }
+    );
+  }
+}
+
 export const createSale = async (req, res) => {
   try {
     const { items, payment_method, location } = req.body;
@@ -11,7 +44,7 @@ export const createSale = async (req, res) => {
     }
 
     const updatedItems = [];
-    let totalPrice=0;
+    let totalPrice = 0;
 
     for (const item of items) {
       const { uid, quantity_sold, device_type } = item;
@@ -20,8 +53,6 @@ export const createSale = async (req, res) => {
       if (!device) {
         return res.status(404).json({ message: `Device with UID ${uid} not found` });
       }
-      // console.log(device.inventory_qty)
-      // console.log(device.sold_qty)
 
       if (device.inventory_qty < quantity_sold) {
         return res.status(400).json({ message: `Insufficient stock for ${device.name}` });
@@ -31,44 +62,49 @@ export const createSale = async (req, res) => {
       device.inventory_qty -= quantity_sold;
       device.sold_qty += quantity_sold;
 
-      if(device.sold_standalone && items.length === 1) device.sold_standalone+=1;
-      else if(device.sold_standalone && items.length > 1) device.sold_with_device+=1;
+      if (device.sold_standalone && items.length === 1) {
+        device.sold_standalone += 1;
+      } else if (device.sold_standalone && items.length > 1) {
+        device.sold_with_device += 1;
+      }
 
-     const unitPrice = device.price ?? device.cost_price;
+      const unitPrice = device.price ?? device.cost_price;
       const itemTotal = unitPrice * quantity_sold;
       totalPrice += itemTotal;
 
       await device.save();
 
-
       // Prepare enriched item data for Sale document
       updatedItems.push({
-  uid,
-  device_type,
-  name: device.name,
-  quantity_sold,
-  final_price: unitPrice,           // ✅ use computed unitPrice
-  total_price: itemTotal,           // ✅ use computed itemTotal
-  discount: device.discount,
-  manufacturer: device.manufacturer
-});
+        uid,
+        device_type,
+        name: device.name,
+        quantity_sold,
+        final_price: unitPrice,
+        total_price: itemTotal,
+        discount: device.discount,
+        manufacturer: device.manufacturer,
+      });
     }
-    //console.log(totalPrice);
 
     const sale = new Sale({
       items: updatedItems,
       total_price: totalPrice,
       payment_method,
-      location, 
+      location,
     });
 
     await sale.save();
+
+    // Update also_bought_together arrays based on the sale items
+    await updateAlsoBoughtTogether(updatedItems);
 
     res.status(201).json({ message: "🧾 Sale recorded successfully", sale });
   } catch (err) {
     res.status(500).json({ message: "❌ Error recording sale", error: err.message });
   }
 };
+
 
 // GET: Fetch all sales
 export const getAllSales = async (req, res) => {
@@ -122,5 +158,96 @@ export const getRealTimeSalesAnalytics = async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ message: "❌ Error fetching real-time analytics", error: err.message });
+  }
+};
+
+export const accessoryCorrelation = async (req, res) => {
+  try {
+    const sales = await Sale.find();
+
+    const deviceTypes = ["Mobile", "Laptop", "Tablet"];
+    const accessories = ["charger", "earphones", "mouse", "cover", "powerbank"];
+
+    // Map accessory product names to their categories
+    const accessoryMap = {
+      "Boat Rockerz 450": "earphones",
+      "Samsung 25W USB-C": "charger",
+      "Mi Power Bank 3i 10000mAh": "powerbank",
+      "Logitech M221 Silent": "mouse",
+      "iPhone 13 Pro Max Tempered Glass": "cover",
+    };
+
+    // Initialize correlation matrix
+    const correlationMap = {};
+    deviceTypes.forEach((device) => {
+      correlationMap[device] = {};
+      accessories.forEach((acc) => {
+        correlationMap[device][acc] = { count: 0, total: 0 };
+      });
+    });
+
+    for (const sale of sales) {
+      const items = sale.items;
+
+      // Filter out the main devices sold
+      const devices = items.filter((i) => deviceTypes.includes(i.device_type));
+
+      // Extract accessory categories based on product name using the map
+      const boughtAccessories = items
+        .filter((i) => i.device_type === "Addon")
+        .map((i) => accessoryMap[i.name])
+        .filter(Boolean); // remove undefined if accessoryMap doesn't match
+
+      // Count accessory purchase occurrences per device
+      devices.forEach((device) => {
+        accessories.forEach((acc) => {
+          if (boughtAccessories.includes(acc)) {
+            correlationMap[device.device_type][acc].count += 1;
+          }
+          correlationMap[device.device_type][acc].total += 1;
+        });
+      });
+    }
+
+    // Convert counts to percentages
+    const result = Object.entries(correlationMap).map(([device, accs]) => {
+      const row = { device };
+      Object.entries(accs).forEach(([acc, { count, total }]) => {
+        row[acc] = total > 0 ? Math.round((count / total) * 100) : 0;
+      });
+      return row;
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({
+      error: "Failed to compute correlation",
+      details: err.message,
+    });
+  }
+};
+
+export const getRevenueDistribution = async (req, res) => {
+  try {
+    const result = await Sale.aggregate([
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.name",
+          totalRevenue: { $sum: "$items.total_price" }
+        }
+      },
+      { $sort: { totalRevenue: -1 } }
+    ]);
+
+    const formatted = result.map(item => ({
+      name: item._id,
+      value: item.totalRevenue
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error("Error in revenue distribution:", err);
+    res.status(500).json({ message: "Failed to get revenue distribution", error: err.message });
   }
 };

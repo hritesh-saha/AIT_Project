@@ -12,7 +12,9 @@ import userRoutes from "./routes/userRoutes.js";
 import connectDB from './configs/db.js';
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "*"
+}));
 app.use(express.json());
 
 connectDB();

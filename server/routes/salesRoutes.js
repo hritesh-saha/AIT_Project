@@ -1,5 +1,5 @@
 import express from "express";
-import { createSale, getAllSales, getRealTimeSalesAnalytics } from "../Controllers/salesController.js"
+import { accessoryCorrelation, createSale, getAllSales, getRealTimeSalesAnalytics, getRevenueDistribution } from "../Controllers/salesController.js"
 
 const router = express.Router();
 
@@ -11,5 +11,9 @@ router.get("/", getAllSales);
 
 // GET: Fetch all sales records for last 1 hour, 6 hours and 24 hours
 router.get("/analytics/realtime", getRealTimeSalesAnalytics);
+
+router.get("/correlation-analytics", accessoryCorrelation);
+
+router.get("/analytics/revenue-distribution", getRevenueDistribution);
 
 export default router;

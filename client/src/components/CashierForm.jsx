@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-// import axios from "axios";
+import axios from "axios";  // uncomment axios import
 
 const paymentMethods = ["Cash", "Card", "UPI", "Other"];
 
@@ -15,36 +15,12 @@ const CashierForm = () => {
   const [submitMessage, setSubmitMessage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const dummyDevices = [
-    {
-      uid: "dev001",
-      name: "iPhone 13",
-      device_type: "mobile",
-      inventory_qty: 20,
-      final_price: 999.99,
-    },
-    {
-      uid: "dev002",
-      name: "Dell XPS 15",
-      device_type: "laptop",
-      inventory_qty: 10,
-      final_price: 1500,
-    },
-    {
-      uid: "dev003",
-      name: "iPad Air",
-      device_type: "tablet",
-      inventory_qty: 15,
-      final_price: 599.99,
-    },
-  ];
-
   useEffect(() => {
     const fetchDevices = async () => {
       try {
         setLoadingDevices(true);
-        await new Promise((r) => setTimeout(r, 800));
-        setDevices(dummyDevices);
+        const response = await axios.get("http://localhost:5000/api/devices"); // Fetch real devices from backend
+        setDevices(response.data);
       } catch (err) {
         setError("Failed to fetch devices");
       } finally {
@@ -77,31 +53,43 @@ const CashierForm = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (selectedItems.length === 0) {
-      setSubmitMessage({ type: "error", text: "Select at least one item" });
-      return;
-    }
+  e.preventDefault();
+  if (selectedItems.length === 0) {
+    setSubmitMessage({ type: "error", text: "Select at least one item" });
+    return;
+  }
 
-    setSubmitting(true);
-    setSubmitMessage(null);
+  setSubmitting(true);
+  setSubmitMessage(null);
 
-    try {
-      await new Promise((r) => setTimeout(r, 1000));
-      setSubmitMessage({ type: "success", text: "🧾 Sale recorded successfully (dummy)" });
+  try {
+    // Send sale data to backend
+    const payload = {
+      items: selectedItems.map(item => ({
+        uid: item.uid,
+        quantity_sold: item.quantity_sold,
+        device_type: devices.find(d => d.uid === item.uid)?.device_type || ""
+      })),
+      payment_method: paymentMethod,
+      location,
+    };
 
-      setSelectedItems([]);
-      setPaymentMethod(paymentMethods[0]);
-      setLocation("");
-    } catch (err) {
-      setSubmitMessage({
-        type: "error",
-        text: "Failed to record sale (dummy)",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    const response = await axios.post("http://localhost:5000/api/sales", payload);
+    setSubmitMessage({ type: "success", text: response.data.message });
+
+    setSelectedItems([]);
+    setPaymentMethod(paymentMethods[0]);
+    setLocation("");
+  } catch (err) {
+    setSubmitMessage({
+      type: "error",
+      text: err.response?.data?.message || "Failed to record sale",
+    });
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   const formatPrice = (price) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price);

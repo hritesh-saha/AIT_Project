@@ -53,7 +53,9 @@ export const getDeviceByUid = async (req, res) => {
 // GET /api/devices?device_type=mobile&manufacturer=Samsung&page=1&limit=20
 export const getDevices = async (req, res) => {
   try {
-    const { device_type, manufacturer, page = 1, limit = 20 } = req.query;
+    const { device_type, manufacturer, 
+      //page = 1, limit = 20
+     } = req.query;
 
     let devices = [];
 
@@ -65,16 +67,16 @@ export const getDevices = async (req, res) => {
       const filter = manufacturer ? { manufacturer } : {};
 
       devices = await DeviceModel.find(filter)
-        .skip((page - 1) * limit)
-        .limit(parseInt(limit));
+        //.skip((page - 1) * limit)
+        //.limit(parseInt(limit));
     } else {
       // If no device_type, get all devices of all types (limited)
       const mobiles = await Mobile.find(manufacturer ? { manufacturer } : {})
-        .limit(parseInt(limit));
+        //.limit(parseInt(limit));
       const laptops = await Laptop.find(manufacturer ? { manufacturer } : {})
-        .limit(parseInt(limit));
+        //.limit(parseInt(limit));
       const tablets = await Tablet.find(manufacturer ? { manufacturer } : {})
-        .limit(parseInt(limit));
+        //.limit(parseInt(limit));
       devices = [...mobiles, ...laptops, ...tablets];
     }
 

@@ -1,196 +1,129 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell,
 } from "recharts";
 
-const COLORS = [
-  "#4F46E5",
-  "#6366F1",
-  "#818CF8",
-  "#A5B4FC",
-  "#C7D2FE",
-  "#E0E7FF",
-];
+const COLORS = ["#4F46E5", "#6366F1", "#818CF8", "#A5B4FC", "#C7D2FE", "#E0E7FF"];
 
 const OwnerDashboard = () => {
-  const dummySalesData = {
-    last_hour: { total_sales: 10, total_items_sold: 35, total_revenue: 1500 },
-    last_6_hours: {
-      total_sales: 45,
-      total_items_sold: 160,
-      total_revenue: 7500,
-    },
-    last_24_hours: {
-      total_sales: 120,
-      total_items_sold: 420,
-      total_revenue: 21000,
-    },
-  };
-
-  const dummyInventoryData = {
-    mobile: {
-      totalInventory: 200,
-      totalSold: 150,
-      avgDiscount: 10.5,
-      avgPrice: 350,
-      revenue: 50000,
-    },
-    laptop: {
-      totalInventory: 150,
-      totalSold: 100,
-      avgDiscount: 8.2,
-      avgPrice: 850,
-      revenue: 85000,
-    },
-    tablet: {
-      totalInventory: 80,
-      totalSold: 60,
-      avgDiscount: 7.5,
-      avgPrice: 400,
-      revenue: 32000,
-    },
-    headphone: {
-      totalInventory: 100,
-      totalSold: 90,
-      avgDiscount: 5.5,
-      avgPrice: 50,
-      revenue: 4500,
-    },
-    charger: {
-      totalInventory: 120,
-      totalSold: 110,
-      avgDiscount: 6,
-      avgPrice: 30,
-      revenue: 3300,
-    },
-    powerbank: {
-      totalInventory: 90,
-      totalSold: 80,
-      avgDiscount: 4.5,
-      avgPrice: 70,
-      revenue: 5600,
-    },
-    mouse: {
-      totalInventory: 110,
-      totalSold: 95,
-      avgDiscount: 3.5,
-      avgPrice: 40,
-      revenue: 3800,
-    },
-    screenguard: {
-      totalInventory: 130,
-      totalSold: 120,
-      avgDiscount: 2,
-      avgPrice: 20,
-      revenue: 2400,
-    },
-  };
-
-  const [salesData] = useState(dummySalesData);
-  const [inventoryData] = useState(dummyInventoryData);
+  const [salesData, setSalesData] = useState(null);
+  const [inventoryData, setInventoryData] = useState(null);
+  const [correlationData, setCorrelationData] = useState([]);
+  const [revenuePieData, setRevenuePieData] = useState([]);
   const [selectedTime, setSelectedTime] = useState("last_hour");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Correlation heatmap data: how often buyers of main devices also buy these accessories (in %)
-  const correlationData = [
-    {
-      device: "Mobile",
-      headphone: 75,
-      charger: 90,
-      powerbank: 80,
-      mouse: 30,
-      screenguard: 85,
-    },
-    {
-      device: "Laptop",
-      headphone: 40,
-      charger: 70,
-      powerbank: 50,
-      mouse: 90,
-      screenguard: 20,
-    },
-    {
-      device: "Tablet",
-      headphone: 60,
-      charger: 80,
-      powerbank: 40,
-      mouse: 20,
-      screenguard: 75,
-    },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
 
-  const accessoryList = [
-    "headphone",
-    "charger",
-    "powerbank",
-    "mouse",
-    "screenguard",
-  ];
+        const salesRes = await axios.get("http://localhost:5000/api/sales/analytics/realtime");
+        const inventoryRes = await axios.get("http://localhost:5000/api/inventory/summary");
+        const addonRes = await axios.get("http://localhost:5000/api/inventory/addon");
+        const correlationRes = await axios.get("http://localhost:5000/api/sales/correlation-analytics");
+        const revenueRes = await axios.get("http://localhost:5000/api/sales/analytics/revenue-distribution");
 
-  // Helper: Format currency
-  const formatCurrency = (num) =>
-    num.toLocaleString("en-US", { style: "currency", currency: "USD" });
+        const catMap = {
+          Headphone: "headphone",
+          Charger: "charger",
+          "Power Bank": "powerbank",
+          Mouse: "mouse",
+          "Screen Guard": "screenguard",
+        };
+        const addons = {};
+        if (Array.isArray(addonRes.data)) {
+          addonRes.data.forEach((item) => {
+            const key = catMap[item.category];
+            if (key) addons[key] = item;
+          });
+        }
 
-  // Sales Bar Chart data
+        const combinedInventory = {
+          mobile: inventoryRes.data.mobile,
+          laptop: inventoryRes.data.laptop,
+          tablet: inventoryRes.data.tablet,
+          ...addons,
+        };
+
+        setSalesData(salesRes.data);
+        setInventoryData(combinedInventory);
+        setCorrelationData(correlationRes.data);
+        setRevenuePieData(revenueRes.data);
+        setError(null);
+      } catch (err) {
+        setError("Failed to load dashboard data");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  if (loading) return <div className="text-center mt-20">Loading dashboard...</div>;
+  if (error) return <div className="text-red-600 text-center mt-20">{error}</div>;
+
+  const sales = salesData || {
+    last_hour: { total_sales: 0, total_items_sold: 0, total_revenue: 0 },
+    last_6_hours: { total_sales: 0, total_items_sold: 0, total_revenue: 0 },
+    last_24_hours: { total_sales: 0, total_items_sold: 0, total_revenue: 0 },
+  };
+
+  const inv = inventoryData || {};
+  const getSafeInventory = (key) => ({
+    totalInventory: inv[key]?.totalInventory || 0,
+    totalSold: inv[key]?.totalSold || 0,
+    avgDiscount: inv[key]?.avgDiscount || 0,
+    avgPrice: inv[key]?.avgPrice || 0,
+    revenue: inv[key]?.revenue || 0,
+  });
+
+  const inventorySafe = {
+    mobile: getSafeInventory("mobile"),
+    laptop: getSafeInventory("laptop"),
+    tablet: getSafeInventory("tablet"),
+    headphone: getSafeInventory("headphone"),
+    charger: getSafeInventory("charger"),
+    powerbank: getSafeInventory("powerbank"),
+    mouse: getSafeInventory("mouse"),
+    screenguard: getSafeInventory("screenguard"),
+  };
+
   const salesChartData = [
-    { metric: "Total Sales", value: salesData[selectedTime].total_sales },
-    {
-      metric: "Total Items Sold",
-      value: salesData[selectedTime].total_items_sold,
-    },
-    { metric: "Total Revenue", value: salesData[selectedTime].total_revenue },
+    { metric: "Total Sales", value: sales[selectedTime].total_sales },
+    { metric: "Total Items Sold", value: sales[selectedTime].total_items_sold },
+    { metric: "Total Revenue", value: sales[selectedTime].total_revenue },
   ];
 
-  // Pie chart data for revenue
-  const revenuePieData = Object.entries(inventoryData).map(([key, val]) => ({
-    name: key.charAt(0).toUpperCase() + key.slice(1),
-    value: val.revenue || 0,
-  }));
-
-  // Pie chart data for inventory
-  const inventoryPieData = Object.entries(inventoryData).map(([key, val]) => ({
+  const inventoryPieData = Object.entries(inventorySafe).map(([key, val]) => ({
     name: key.charAt(0).toUpperCase() + key.slice(1),
     value: val.totalInventory || 0,
   }));
 
   const deviceRankings = [
-    { name: "Mobile", inventory: inventoryData.mobile.totalInventory },
-    { name: "Laptop", inventory: inventoryData.laptop.totalInventory },
-    { name: "Tablet", inventory: inventoryData.tablet.totalInventory },
+    { name: "Mobile", inventory: inventorySafe.mobile.totalInventory },
+    { name: "Laptop", inventory: inventorySafe.laptop.totalInventory },
+    { name: "Tablet", inventory: inventorySafe.tablet.totalInventory },
   ].sort((a, b) => b.inventory - a.inventory);
 
-  // Heatmap cell color based on value (0-100%)
-  const getHeatmapColor = (value) => {
-    // Map 0-100% to a blue intensity scale
-    const intensity = Math.round((value / 100) * 255);
-    return `rgba(79, 70, 229, ${value / 100})`; // Indigo with alpha
-  };
+  const accessoryList = ["charger", "earphones", "mouse", "bag", "cover"];
+
+  const formatCurrency = (num) =>
+    num.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-purple-200 p-8">
-      <h1 className="text-4xl font-bold mb-8 text-center text-indigo-700">
-        Owner Dashboard
-      </h1>
+      <h1 className="text-4xl font-bold mb-8 text-center text-indigo-700">Owner Dashboard</h1>
 
       {/* Sales Analytics */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">
-          Real-Time Sales Analytics
-        </h2>
-
+        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">Real-Time Sales Analytics</h2>
         <div className="mb-6">
-          <label className="mr-4 font-semibold text-indigo-700">
-            Select Time Window:
-          </label>
+          <label className="mr-4 font-semibold text-indigo-700">Select Time Window:</label>
           <select
             value={selectedTime}
             onChange={(e) => setSelectedTime(e.target.value)}
@@ -203,45 +136,26 @@ const OwnerDashboard = () => {
         </div>
 
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart
-            data={salesChartData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-          >
+          <BarChart data={salesChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="metric" />
-            <YAxis
-              tickFormatter={(value) =>
-                selectedTime === "last_24_hours" && value > 1000
-                  ? `${(value / 1000).toFixed(1)}k`
-                  : value
-              }
-            />
+            <YAxis />
             <Tooltip
               formatter={(value, name) =>
-                name === "Total Revenue"
-                  ? formatCurrency(value)
-                  : value.toLocaleString()
+                name === "Total Revenue" ? formatCurrency(value) : value.toLocaleString()
               }
             />
             <Legend />
-            <Bar
-              dataKey="value"
-              fill="#4F46E5"
-              barSize={60}
-              radius={[5, 5, 0, 0]}
-            />
+            <Bar dataKey="value" fill="#4F46E5" barSize={60} radius={[5, 5, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </section>
 
       {/* Correlation Heatmap */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">
-          Correlation Heatmap: Accessories Bought Together
-        </h2>
+        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">Correlation Heatmap: Accessories Bought Together</h2>
         <div className="overflow-x-auto">
           <div className="inline-block">
-            {/* Header Row */}
             <div className="grid grid-cols-6 gap-1 text-center font-semibold text-indigo-700 mb-1">
               <div>Device</div>
               {accessoryList.map((acc) => (
@@ -251,21 +165,12 @@ const OwnerDashboard = () => {
               ))}
             </div>
 
-            {/* Heatmap Grid */}
             {correlationData.map(({ device, ...accs }) => (
-              <div
-                key={device}
-                className="grid grid-cols-6 gap-1 text-center items-center mb-1"
-              >
-                {/* Device label */}
-                <div className="font-semibold bg-indigo-100 rounded px-2 py-1">
-                  {device}
-                </div>
-                {/* Accessory correlation cells */}
+              <div key={device} className="grid grid-cols-6 gap-1 text-center items-center mb-1">
+                <div className="font-semibold bg-indigo-100 rounded px-2 py-1">{device}</div>
                 {accessoryList.map((acc) => {
-                  const val = accs[acc];
+                  const val = accs[acc] ?? 0;
                   const intensity = val / 100;
-                  // Use tailwind bg-indigo-500 with opacity or inline rgba color
                   return (
                     <div
                       key={acc}
@@ -288,117 +193,90 @@ const OwnerDashboard = () => {
 
       {/* Inventory Summary & Ranking */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">
-          Inventory Summary & Ranking
-        </h2>
+        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">Inventory Summary & Ranking</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {["mobile", "laptop", "tablet"].map((device) => (
             <div
               key={device}
               className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-2xl transition"
             >
-              <h3 className="text-xl font-semibold mb-2 capitalize text-indigo-600">
-                {device}
-              </h3>
-              <p>
-                Total Inventory:{" "}
-                <span className="font-bold">
-                  {inventoryData[device].totalInventory}
-                </span>
-              </p>
-              <p>
-                Total Sold:{" "}
-                <span className="font-bold">
-                  {inventoryData[device].totalSold}
-                </span>
-              </p>
-              <p>
-                Avg. Discount:{" "}
-                <span className="font-bold">
-                  {inventoryData[device].avgDiscount.toFixed(2)}%
-                </span>
-              </p>
-              <p>
-                Avg. Price:{" "}
-                <span className="font-bold">
-                  {formatCurrency(inventoryData[device].avgPrice)}
-                </span>
-              </p>
+              <h3 className="text-xl font-semibold mb-2 capitalize text-indigo-600">{device}</h3>
+              <p>Total Inventory: <span className="font-bold">{inventorySafe[device].totalInventory}</span></p>
+              <p>Total Sold: <span className="font-bold">{inventorySafe[device].totalSold}</span></p>
+              <p>Avg. Discount: <span className="font-bold">{inventorySafe[device].avgDiscount.toFixed(2)}%</span></p>
+              <p>Avg. Price: <span className="font-bold">{formatCurrency(inventorySafe[device].avgPrice)}</span></p>
             </div>
           ))}
 
           <div className="bg-white rounded-lg shadow-lg p-6 col-span-1 md:col-span-1 cursor-default">
-            <h3 className="text-xl font-semibold mb-4 text-indigo-600">
-              Inventory Ranking
-            </h3>
+            <h3 className="text-xl font-semibold mb-4 text-indigo-600">Inventory Ranking</h3>
             <ol className="list-decimal list-inside space-y-2">
               {deviceRankings.map((device) => (
                 <li key={device.name} className="text-lg">
-                  {device.name}:{" "}
-                  <span className="font-bold">{device.inventory}</span> items
+                  {device.name}: <span className="font-bold">{device.inventory}</span> items
                 </li>
               ))}
             </ol>
           </div>
         </div>
 
-        {/* Pie charts */}
+        {/* Pie Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold mb-4 text-indigo-600 text-center">
-              Revenue Distribution by Product
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={revenuePieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  fill="#4F46E5"
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
-                >
-                  {revenuePieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip formatter={formatCurrency} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+  <h3 className="text-xl font-semibold mb-4 text-indigo-600 text-center">
+    Revenue Distribution by Product
+  </h3>
+  <ResponsiveContainer width="100%" height={300}>
+    <PieChart>
+      <Pie
+        data={revenuePieData.filter((entry) => entry.value > 0)}
+        dataKey="value"
+        nameKey="name"
+        cx="50%"
+        cy="50%"
+        outerRadius={100}
+        fill="#4F46E5"
+        labelLine={false}
+        isAnimationActive={true}
+      >
+        {revenuePieData
+          .filter((entry) => entry.value > 0)
+          .map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+      </Pie>
+      <Tooltip
+        formatter={(value, name, props) => [
+          formatCurrency(value),
+          revenuePieData[props.payload.index]?.name,
+        ]}
+      />
+      <Legend layout="vertical" align="right" verticalAlign="middle" />
+    </PieChart>
+  </ResponsiveContainer>
+</div>
+
 
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold mb-4 text-indigo-600 text-center">
-              Inventory Distribution by Product
-            </h3>
+            <h3 className="text-xl font-semibold mb-4 text-indigo-600 text-center">Inventory Distribution by Product</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={inventoryPieData}
+                  data={inventoryPieData.filter((entry) => entry.value > 0)}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
                   fill="#6366F1"
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
-                  {inventoryPieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
+                  {inventoryPieData
+                    .filter((entry) => entry.value > 0)
+                    .map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
                 </Pie>
                 <Tooltip formatter={(value) => value.toLocaleString()} />
                 <Legend />

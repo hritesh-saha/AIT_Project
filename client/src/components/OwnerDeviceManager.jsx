@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const deviceTypes = ["mobile", "laptop", "tablet"];
 
@@ -23,83 +24,74 @@ const OwnerDeviceManager = () => {
     fetchDevices();
   }, []);
 
-  const fetchDevices = () => {
-    // Simulate fetching dummy data
-    const dummyDevices = [
-      {
-        uid: "DEV001",
-        name: "Galaxy A12",
-        manufacturer: "Samsung",
+  // Fetch devices from backend
+  const fetchDevices = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/devices");
+      setDevices(res.data);
+      setMessage("");
+    } catch (err) {
+      setMessage("Failed to fetch devices");
+      console.error(err);
+    }
+  };
+
+  // Add new device (POST)
+  const handleAddDevice = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("http://localhost:5000/api/devices", formData);
+      setMessage(res.data.message || "Device added successfully");
+      setFormData({
         device_type: "mobile",
-        final_price: 12999,
-        inventory_qty: 12,
-        date: "2025-06-25",
-        time: "12:34:56",
-      },
-      {
-        uid: "DEV002",
-        name: "MacBook Air",
-        manufacturer: "Apple",
-        device_type: "laptop",
-        final_price: 99999,
-        inventory_qty: 5,
-        date: "2025-06-24",
-        time: "10:20:30",
-      },
-    ];
-    setDevices(dummyDevices);
+        name: "",
+        manufacturer: "",
+        inventory_qty: 0,
+        final_price: 0,
+      });
+      fetchDevices();
+    } catch (err) {
+      setMessage("Failed to add device");
+      console.error(err);
+    }
   };
 
-  const handleAddDevice = (e) => {
+  // Update stock quantity (PATCH)
+  const handleStockUpdate = async (e) => {
     e.preventDefault();
 
-    const newDevice = {
-      uid: "DEV" + String(devices.length + 1).padStart(3, "0"),
-      ...formData,
-      date: new Date().toISOString().split("T")[0],
-      time: new Date().toTimeString().split(" ")[0],
-    };
-
-    setDevices([...devices, newDevice]);
-    setMessage("Device added (dummy)");
-  };
-
-  const handleStockUpdate = (e) => {
-    e.preventDefault();
-
-    const index = devices.findIndex((d) => d.uid === actionUid);
-    if (index === -1) {
-      setMessage("UID not found");
+    if (!actionUid) {
+      setMessage("Please enter Device UID");
       return;
     }
 
-    const updatedDevices = [...devices];
-    const device = updatedDevices[index];
-
-    if (
-      stockUpdate.action === "subtract" &&
-      device.inventory_qty < stockUpdate.quantity
-    ) {
-      setMessage("Insufficient stock to subtract");
-      return;
+    try {
+      const res = await axios.patch(
+        `http://localhost:5000/api/devices/${actionUid}/stock`,
+        stockUpdate
+      );
+      setMessage(res.data.message || "Stock updated successfully");
+      setActionUid("");
+      setStockUpdate({ quantity: 1, action: "add" });
+      fetchDevices();
+    } catch (err) {
+      setMessage(err.response?.data?.message || "Failed to update stock");
+      console.error(err);
     }
-
-    device.inventory_qty =
-      stockUpdate.action === "add"
-        ? device.inventory_qty + stockUpdate.quantity
-        : device.inventory_qty - stockUpdate.quantity;
-
-    device.date = new Date().toISOString().split("T")[0];
-    device.time = new Date().toTimeString().split(" ")[0];
-
-    setDevices(updatedDevices);
-    setMessage(`Stock ${stockUpdate.action}ed (dummy)`);
   };
 
-  const handleDeleteDevice = (uid) => {
-    const filtered = devices.filter((d) => d.uid !== uid);
-    setDevices(filtered);
-    setMessage("Device deleted (dummy)");
+  // Delete device (DELETE)
+  const handleDeleteDevice = async (uid) => {
+    if (!window.confirm("Are you sure you want to delete this device?")) return;
+
+    try {
+      const res = await axios.delete(`http://localhost:5000/api/devices/${uid}`);
+      setMessage(res.data.message || "Device deleted successfully");
+      fetchDevices();
+    } catch (err) {
+      setMessage("Failed to delete device");
+      console.error(err);
+    }
   };
 
   return (
@@ -115,9 +107,7 @@ const OwnerDeviceManager = () => {
         <h3 className="text-xl font-semibold mb-2">Add New Device</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block mb-1 text-sm font-medium">
-              Device Type
-            </label>
+            <label className="block mb-1 text-sm font-medium">Device Type</label>
             <select
               value={formData.device_type}
               onChange={(e) =>
@@ -134,9 +124,7 @@ const OwnerDeviceManager = () => {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium">
-              Device Name
-            </label>
+            <label className="block mb-1 text-sm font-medium">Device Name</label>
             <input
               type="text"
               className="p-2 border rounded w-full"
@@ -149,9 +137,7 @@ const OwnerDeviceManager = () => {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium">
-              Manufacturer
-            </label>
+            <label className="block mb-1 text-sm font-medium">Manufacturer</label>
             <input
               type="text"
               className="p-2 border rounded w-full"
@@ -167,12 +153,13 @@ const OwnerDeviceManager = () => {
             <label className="block mb-1 text-sm font-medium">Quantity</label>
             <input
               type="number"
+              min="0"
               className="p-2 border rounded w-full"
               value={formData.inventory_qty}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  inventory_qty: parseInt(e.target.value),
+                  inventory_qty: parseInt(e.target.value, 10) || 0,
                 })
               }
               required
@@ -183,12 +170,14 @@ const OwnerDeviceManager = () => {
             <label className="block mb-1 text-sm font-medium">Price (₹)</label>
             <input
               type="number"
+              min="0"
+              step="0.01"
               className="p-2 border rounded w-full"
               value={formData.final_price}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  final_price: parseFloat(e.target.value),
+                  final_price: parseFloat(e.target.value) || 0,
                 })
               }
               required
@@ -217,6 +206,7 @@ const OwnerDeviceManager = () => {
               className="p-2 border rounded w-full"
               value={actionUid}
               onChange={(e) => setActionUid(e.target.value)}
+              required
             />
           </div>
 
@@ -238,14 +228,16 @@ const OwnerDeviceManager = () => {
             <label className="block mb-1 text-sm font-medium">Quantity</label>
             <input
               type="number"
+              min="1"
               className="p-2 border rounded w-full"
               value={stockUpdate.quantity}
               onChange={(e) =>
                 setStockUpdate({
                   ...stockUpdate,
-                  quantity: parseInt(e.target.value),
+                  quantity: parseInt(e.target.value, 10) || 1,
                 })
               }
+              required
             />
           </div>
 
@@ -278,32 +270,33 @@ const OwnerDeviceManager = () => {
               </tr>
             </thead>
             <tbody>
-              {devices.map((dev) => (
-                <tr key={dev.uid} className="border-t">
-                  <td>{dev.uid}</td>
-                  <td>{dev.name}</td>
-                  <td>{dev.manufacturer}</td>
-                  <td>{dev.device_type}</td>
-                  <td>₹{dev.final_price.toFixed(2)}</td>
-                  <td>{dev.inventory_qty}</td>
-                  <td>{dev.date}</td>
-                  <td>{dev.time}</td>
-                  <td>
-                    <button
-                      onClick={() => handleDeleteDevice(dev.uid)}
-                      className="bg-red-500 text-white px-3 py-1 rounded"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {devices.length === 0 && (
+              {devices.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="py-4 text-gray-500">
                     No devices found.
                   </td>
                 </tr>
+              ) : (
+                devices.map((dev) => (
+                  <tr key={dev.uid} className="border-t">
+                    <td>{dev.uid}</td>
+                    <td>{dev.name}</td>
+                    <td>{dev.manufacturer}</td>
+                    <td>{dev.device_type}</td>
+                    <td>₹{parseFloat(dev.final_price).toFixed(2)}</td>
+                    <td>{dev.inventory_qty}</td>
+                    <td>{dev.date?.split("T")[0] || dev.date}</td>
+                    <td>{dev.time || "—"}</td>
+                    <td>
+                      <button
+                        onClick={() => handleDeleteDevice(dev.uid)}
+                        className="bg-red-500 text-white px-3 py-1 rounded"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
