@@ -1,11 +1,30 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
 } from "recharts";
+import OwnerNavbar from "./OwnerNavbar";
 
-const COLORS = ["#4F46E5", "#6366F1", "#818CF8", "#A5B4FC", "#C7D2FE", "#E0E7FF"];
+const COLORS = [
+  "#4F46E5",
+  "#6366F1",
+  "#818CF8",
+  "#A5B4FC",
+  "#C7D2FE",
+  "#E0E7FF",
+];
 
 const OwnerDashboard = () => {
   const [salesData, setSalesData] = useState(null);
@@ -15,17 +34,32 @@ const OwnerDashboard = () => {
   const [selectedTime, setSelectedTime] = useState("last_hour");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [monthlySale, setMonthlySale] = useState(null);
+  const [timeRange, setTimeRange] = useState("month");
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
 
-        const salesRes = await axios.get("http://localhost:5000/api/sales/analytics/realtime");
-        const inventoryRes = await axios.get("http://localhost:5000/api/inventory/summary");
-        const addonRes = await axios.get("http://localhost:5000/api/inventory/addon");
-        const correlationRes = await axios.get("http://localhost:5000/api/sales/correlation-analytics");
-        const revenueRes = await axios.get("http://localhost:5000/api/sales/analytics/revenue-distribution");
+        const salesRes = await axios.get(
+          "http://localhost:5000/api/sales/analytics/realtime"
+        );
+        const inventoryRes = await axios.get(
+          "http://localhost:5000/api/inventory/summary"
+        );
+        const addonRes = await axios.get(
+          "http://localhost:5000/api/inventory/addon"
+        );
+        const correlationRes = await axios.get(
+          "http://localhost:5000/api/sales/correlation-analytics"
+        );
+        const revenueRes = await axios.get(
+          "http://localhost:5000/api/sales/analytics/revenue-distribution"
+        );
+        const MonthlySaleRes = await axios.get(
+          "http://localhost:5000/api/sales"
+        );
 
         const catMap = {
           Headphone: "headphone",
@@ -49,10 +83,52 @@ const OwnerDashboard = () => {
           ...addons,
         };
 
+        // Monthly Sale Filtering
+        const now = new Date();
+        let filtered = [];
+
+        if (timeRange === "today") {
+          const startOfToday = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+          );
+          filtered = MonthlySaleRes.data.filter(
+            (sale) => new Date(sale.createdAt) >= startOfToday
+          );
+        } else if (timeRange === "week") {
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          filtered = MonthlySaleRes.data.filter(
+            (sale) => new Date(sale.createdAt) >= startOfWeek
+          );
+        } else {
+          filtered = MonthlySaleRes.data.filter((sale) => {
+            const date = new Date(sale.createdAt);
+            return (
+              date.getFullYear() === now.getFullYear() &&
+              date.getMonth() === now.getMonth()
+            );
+          });
+        }
+
+        const dayMap = {};
+        filtered.forEach((sale) => {
+          const dateStr = new Date(sale.createdAt).toISOString().split("T")[0];
+          dayMap[dateStr] = (dayMap[dateStr] || 0) + (sale.total_price || 0);
+        });
+
+        const monthlyFormatted = Object.entries(dayMap)
+          .map(([date, revenue]) => ({ month: date, revenue }))
+          .sort((a, b) => new Date(a.month) - new Date(b.month));
+
+        setMonthlySale(monthlyFormatted);
+
         setSalesData(salesRes.data);
         setInventoryData(combinedInventory);
         setCorrelationData(correlationRes.data);
         setRevenuePieData(revenueRes.data);
+        //setMonthlySale(monthlyFormatted);
         setError(null);
       } catch (err) {
         setError("Failed to load dashboard data");
@@ -62,10 +138,21 @@ const OwnerDashboard = () => {
       }
     };
     fetchDashboardData();
-  }, []);
+  }, [timeRange]);
 
-  if (loading) return <div className="text-center mt-20">Loading dashboard...</div>;
-  if (error) return <div className="text-red-600 text-center mt-20">{error}</div>;
+  if (loading)
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <div className="w-16 h-16 border-4 border-indigo-500 border-dashed rounded-full animate-spin mb-4"></div>
+        <p className="text-lg font-medium text-indigo-700 animate-pulse">
+          Loading your dashboard...
+        </p>
+        <p className="text-sm text-gray-500 mt-1">Please wait a moment</p>
+      </div>
+    );
+
+  if (error)
+    return <div className="text-red-600 text-center mt-20">{error}</div>;
 
   const sales = salesData || {
     last_hour: { total_sales: 0, total_items_sold: 0, total_revenue: 0 },
@@ -117,13 +204,56 @@ const OwnerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-purple-200 p-8">
-      <h1 className="text-4xl font-bold mb-8 text-center text-indigo-700">Owner Dashboard</h1>
+      <OwnerNavbar />
+      <h1 className="text-4xl font-bold mb-8 mt-6 text-center text-indigo-700">
+        Owner Dashboard
+      </h1>
+
+      {/* Line Chart for Monthly Sales */}
+      <section className="mb-12">
+        <div className="flex flex-col justify-center items-center mb-4">
+          <h2 className="text-2xl font-semibold text-indigo-800">
+            Sales Trend
+          </h2>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className="p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          >
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+          </select>
+        </div>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart
+            data={monthlySale}
+            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis tickFormatter={(val) => `$${(val / 1000).toFixed(1)}k`} />
+            <Tooltip formatter={(value) => formatCurrency(value)} />
+            <Line
+              type="monotone"
+              dataKey="revenue"
+              stroke="#4F46E5"
+              strokeWidth={2}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </section>
 
       {/* Sales Analytics */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">Real-Time Sales Analytics</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">
+          Real-Time Sales Analytics
+        </h2>
         <div className="mb-6">
-          <label className="mr-4 font-semibold text-indigo-700">Select Time Window:</label>
+          <label className="mr-4 font-semibold text-indigo-700">
+            Select Time Window:
+          </label>
           <select
             value={selectedTime}
             onChange={(e) => setSelectedTime(e.target.value)}
@@ -136,24 +266,36 @@ const OwnerDashboard = () => {
         </div>
 
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={salesChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <BarChart
+            data={salesChartData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="metric" />
             <YAxis />
             <Tooltip
               formatter={(value, name) =>
-                name === "Total Revenue" ? formatCurrency(value) : value.toLocaleString()
+                name === "Total Revenue"
+                  ? formatCurrency(value)
+                  : value.toLocaleString()
               }
             />
             <Legend />
-            <Bar dataKey="value" fill="#4F46E5" barSize={60} radius={[5, 5, 0, 0]} />
+            <Bar
+              dataKey="value"
+              fill="#4F46E5"
+              barSize={60}
+              radius={[5, 5, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </section>
 
       {/* Correlation Heatmap */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">Correlation Heatmap: Accessories Bought Together</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">
+          Correlation Heatmap: Accessories Bought Together
+        </h2>
         <div className="overflow-x-auto">
           <div className="inline-block">
             <div className="grid grid-cols-6 gap-1 text-center font-semibold text-indigo-700 mb-1">
@@ -166,8 +308,13 @@ const OwnerDashboard = () => {
             </div>
 
             {correlationData.map(({ device, ...accs }) => (
-              <div key={device} className="grid grid-cols-6 gap-1 text-center items-center mb-1">
-                <div className="font-semibold bg-indigo-100 rounded px-2 py-1">{device}</div>
+              <div
+                key={device}
+                className="grid grid-cols-6 gap-1 text-center items-center mb-1"
+              >
+                <div className="font-semibold bg-indigo-100 rounded px-2 py-1">
+                  {device}
+                </div>
                 {accessoryList.map((acc) => {
                   const val = accs[acc] ?? 0;
                   const intensity = val / 100;
@@ -193,27 +340,54 @@ const OwnerDashboard = () => {
 
       {/* Inventory Summary & Ranking */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">Inventory Summary & Ranking</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-indigo-800">
+          Inventory Summary & Ranking
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {["mobile", "laptop", "tablet"].map((device) => (
             <div
               key={device}
               className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-2xl transition"
             >
-              <h3 className="text-xl font-semibold mb-2 capitalize text-indigo-600">{device}</h3>
-              <p>Total Inventory: <span className="font-bold">{inventorySafe[device].totalInventory}</span></p>
-              <p>Total Sold: <span className="font-bold">{inventorySafe[device].totalSold}</span></p>
-              <p>Avg. Discount: <span className="font-bold">{inventorySafe[device].avgDiscount.toFixed(2)}%</span></p>
-              <p>Avg. Price: <span className="font-bold">{formatCurrency(inventorySafe[device].avgPrice)}</span></p>
+              <h3 className="text-xl font-semibold mb-2 capitalize text-indigo-600">
+                {device}
+              </h3>
+              <p>
+                Total Inventory:{" "}
+                <span className="font-bold">
+                  {inventorySafe[device].totalInventory}
+                </span>
+              </p>
+              <p>
+                Total Sold:{" "}
+                <span className="font-bold">
+                  {inventorySafe[device].totalSold}
+                </span>
+              </p>
+              <p>
+                Avg. Discount:{" "}
+                <span className="font-bold">
+                  {inventorySafe[device].avgDiscount.toFixed(2)}%
+                </span>
+              </p>
+              <p>
+                Avg. Price:{" "}
+                <span className="font-bold">
+                  {formatCurrency(inventorySafe[device].avgPrice)}
+                </span>
+              </p>
             </div>
           ))}
 
           <div className="bg-white rounded-lg shadow-lg p-6 col-span-1 md:col-span-1 cursor-default">
-            <h3 className="text-xl font-semibold mb-4 text-indigo-600">Inventory Ranking</h3>
+            <h3 className="text-xl font-semibold mb-4 text-indigo-600">
+              Inventory Ranking
+            </h3>
             <ol className="list-decimal list-inside space-y-2">
               {deviceRankings.map((device) => (
                 <li key={device.name} className="text-lg">
-                  {device.name}: <span className="font-bold">{device.inventory}</span> items
+                  {device.name}:{" "}
+                  <span className="font-bold">{device.inventory}</span> items
                 </li>
               ))}
             </ol>
@@ -223,42 +397,50 @@ const OwnerDashboard = () => {
         {/* Pie Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
-  <h3 className="text-xl font-semibold mb-4 text-indigo-600 text-center">
-    Revenue Distribution by Product
-  </h3>
-  <ResponsiveContainer width="100%" height={300}>
-    <PieChart>
-      <Pie
-        data={revenuePieData.filter((entry) => entry.value > 0)}
-        dataKey="value"
-        nameKey="name"
-        cx="50%"
-        cy="50%"
-        outerRadius={100}
-        fill="#4F46E5"
-        labelLine={false}
-        isAnimationActive={true}
-      >
-        {revenuePieData
-          .filter((entry) => entry.value > 0)
-          .map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-      </Pie>
-      <Tooltip
-        formatter={(value, name, props) => [
-          formatCurrency(value),
-          revenuePieData[props.payload.index]?.name,
-        ]}
-      />
-      <Legend layout="vertical" align="right" verticalAlign="middle" />
-    </PieChart>
-  </ResponsiveContainer>
-</div>
-
+            <h3 className="text-xl font-semibold mb-4 text-indigo-600 text-center">
+              Revenue Distribution by Product
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={revenuePieData.filter((entry) => entry.value > 0)}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  fill="#4F46E5"
+                  labelLine={false}
+                  isAnimationActive={true}
+                >
+                  {revenuePieData
+                    .filter((entry) => entry.value > 0)
+                    .map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value, name, props) => [
+                    formatCurrency(value),
+                    revenuePieData[props.payload.index]?.name,
+                  ]}
+                />
+                <Legend
+                  layout="vertical"
+                  align="right"
+                  verticalAlign="middle"
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold mb-4 text-indigo-600 text-center">Inventory Distribution by Product</h3>
+            <h3 className="text-xl font-semibold mb-4 text-indigo-600 text-center">
+              Inventory Distribution by Product
+            </h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -270,12 +452,17 @@ const OwnerDashboard = () => {
                   outerRadius={100}
                   fill="#6366F1"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
                 >
                   {inventoryPieData
                     .filter((entry) => entry.value > 0)
                     .map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                 </Pie>
                 <Tooltip formatter={(value) => value.toLocaleString()} />

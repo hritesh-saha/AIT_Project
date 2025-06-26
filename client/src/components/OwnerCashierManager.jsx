@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import OwnerNavbar from "./OwnerNavbar";
 
 const OwnerCashierManager = () => {
   const [formData, setFormData] = useState({
@@ -88,6 +89,7 @@ const OwnerCashierManager = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      <OwnerNavbar/>
       <h2 className="text-3xl font-bold mb-6 text-center">🧑‍💼 Cashier Management</h2>
 
       {message && (
