@@ -41,7 +41,7 @@ const OwnerNavbar = () => {
           <li>
             <button
               onClick={() => navigate("/")}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm shadow transition"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm shadow transition cursor-pointer"
             >
               Sign Out
             </button>

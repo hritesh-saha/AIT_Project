@@ -251,3 +251,104 @@ export const getRevenueDistribution = async (req, res) => {
     res.status(500).json({ message: "Failed to get revenue distribution", error: err.message });
   }
 };
+
+export const getTotalProfit = async (req, res) => {
+  try {
+    const sales = await Sale.find();
+
+    let total_profit = 0;
+
+    for (const sale of sales) {
+      for (const item of sale.items) {
+        const device = await Device.findOne({ uid: item.uid });
+
+        if (device) {
+          const profit_per_unit = (item.final_price || 0) - (device.cost_price || 0);
+          total_profit += profit_per_unit * item.quantity_sold;
+        }
+      }
+    }
+
+    res.json({ total_profit });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to calculate total profit",
+      error: err.message,
+    });
+  }
+};
+
+export const getAvgBasketValue = async (req, res) => {
+  try {
+    const sales = await Sale.find({}, { total_price: 1 });
+
+    const total = sales.reduce((acc, sale) => acc + (sale.total_price || 0), 0);
+    const avg_basket_value = sales.length > 0 ? total / sales.length : 0;
+
+    res.json({ avg_basket_value });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to calculate average basket value",
+      error: err.message,
+    });
+  }
+};
+
+export const getTopProfitMakers = async (req, res) => {
+  try {
+    const sales = await Sale.find();
+
+    const profitMap = {};
+
+    for (const sale of sales) {
+      for (const item of sale.items) {
+        const device = await Device.findOne({ uid: item.uid });
+        if (!device) continue;
+
+        const profit_per_unit = (item.final_price || 0) - (device.cost_price || 0);
+        const total_profit = profit_per_unit * item.quantity_sold;
+
+        profitMap[item.name] = (profitMap[item.name] || 0) + total_profit;
+      }
+    }
+
+    const top = Object.entries(profitMap)
+      .map(([name, profit]) => ({ name, profit }))
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 10);
+
+    res.json({ top });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch top profit makers",
+      error: err.message,
+    });
+  }
+};
+
+export const getTopSellers = async (req, res) => {
+  try {
+    const sales = await Sale.find();
+
+    const sellCountMap = {};
+
+    for (const sale of sales) {
+      for (const item of sale.items) {
+        sellCountMap[item.name] =
+          (sellCountMap[item.name] || 0) + item.quantity_sold;
+      }
+    }
+
+    const top = Object.entries(sellCountMap)
+      .map(([name, units_sold]) => ({ name, units_sold }))
+      .sort((a, b) => b.units_sold - a.units_sold)
+      .slice(0, 10);
+
+    res.json({ top });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch top sellers",
+      error: err.message,
+    });
+  }
+};

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // ✅ import for navigation
+import { useNavigate } from "react-router-dom"; // ✅ Navigation hook
 
 const paymentMethods = ["Cash", "Card", "UPI", "Other"];
 
 const CashierForm = () => {
-  const navigate = useNavigate(); // ✅ navigation hook
+  const navigate = useNavigate();
   const [devices, setDevices] = useState([]);
   const [loadingDevices, setLoadingDevices] = useState(true);
   const [error, setError] = useState(null);
@@ -13,6 +13,7 @@ const CashierForm = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState(paymentMethods[0]);
   const [location, setLocation] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [submitMessage, setSubmitMessage] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -21,7 +22,6 @@ const CashierForm = () => {
     try {
       setLoadingDevices(true);
       const response = await axios.get("http://localhost:5000/api/devices");
-      console.log(response.data);
       setDevices(response.data);
     } catch (err) {
       setError("Failed to fetch devices");
@@ -36,7 +36,6 @@ const CashierForm = () => {
 
   const handleQuantityChange = (uid, quantity) => {
     if (quantity < 0) return;
-
     setSelectedItems((prev) => {
       const exists = prev.find((item) => item.uid === uid);
       if (exists) {
@@ -84,7 +83,7 @@ const CashierForm = () => {
       setPaymentMethod(paymentMethods[0]);
       setLocation("");
 
-      await fetchDevices(); // re-fetch
+      await fetchDevices();
     } catch (err) {
       setSubmitMessage({
         type: "error",
@@ -98,9 +97,17 @@ const CashierForm = () => {
   const formatPrice = (price) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price);
 
+  const filtered = searchTerm
+    ? devices.filter((d) => d.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : [];
+
+  const remaining = searchTerm
+    ? devices.filter((d) => !filtered.includes(d))
+    : devices;
+
   if (loadingDevices) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-50 ">
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
         <div className="w-16 h-16 border-4 border-indigo-500 border-dashed rounded-full animate-spin mb-4"></div>
         <p className="text-lg font-medium text-indigo-700 animate-pulse">
           Loading devices...
@@ -115,31 +122,39 @@ const CashierForm = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white shadow rounded-xl relative cursor-pointer">
-      {/* ✅ Sign Out Button */}
+    <div className="max-w-5xl mx-auto p-6 bg-white shadow rounded-xl relative">
+      {/* Sign Out Button */}
       <button
-  className="absolute top-4 right-4 flex items-center gap-2 text-sm bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-200"
-  onClick={() => navigate("/")}
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-4 w-4"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10v1"
-    />
-  </svg>
-  Sign Out
-</button>
-
+        className="absolute top-4 right-4 flex items-center gap-2 text-sm bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-full shadow-md transition-all"
+        onClick={() => navigate("/")}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1m0-10v1"
+          />
+        </svg>
+        Sign Out
+      </button>
 
       <h1 className="text-3xl font-bold text-indigo-700 mb-6">Cashier Sales Form</h1>
+
+      {/* Search Bar */}
+      <input
+        type="text"
+        placeholder="Search devices..."
+        className="w-full mb-4 p-2 border rounded-md focus:ring focus:ring-indigo-300"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="overflow-x-auto mb-6 rounded-lg border border-gray-200 shadow-sm">
@@ -154,38 +169,43 @@ const CashierForm = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {devices.map(({ uid, name, device_type, inventory_qty, final_price, price }) => {
-                const selectedItem = selectedItems.find((item) => item.uid === uid);
-                const quantity = selectedItem ? selectedItem.quantity_sold : 0;
+              {[...filtered, ...remaining].map(
+                ({ uid, name, device_type, inventory_qty, final_price, price }) => {
+                  const selectedItem = selectedItems.find((item) => item.uid === uid);
+                  const quantity = selectedItem ? selectedItem.quantity_sold : 0;
 
-                return (
-                  <tr key={uid} className="hover:bg-indigo-50 transition">
-                    <td className="px-4 py-3 font-medium">{name}</td>
-                    <td className="px-4 py-3 capitalize">{device_type}</td>
-                    <td className="px-4 py-3">{formatPrice(final_price ?? price)}</td>
-                    <td className="px-4 py-3">{inventory_qty}</td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="number"
-                        min={0}
-                        max={inventory_qty}
-                        value={quantity}
-                        onChange={(e) =>
-                          handleQuantityChange(
-                            uid,
-                            Math.min(inventory_qty, Number(e.target.value))
-                          )
-                        }
-                        className="w-20 p-1 border border-gray-300 rounded text-center"
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr key={uid} className="hover:bg-indigo-50 transition">
+                      <td className="px-4 py-3 font-medium">{name}</td>
+                      <td className="px-4 py-3 capitalize">{device_type}</td>
+                      <td className="px-4 py-3">
+                        {formatPrice(final_price ?? price)}
+                      </td>
+                      <td className="px-4 py-3">{inventory_qty}</td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          min={0}
+                          max={inventory_qty}
+                          value={quantity}
+                          onChange={(e) =>
+                            handleQuantityChange(
+                              uid,
+                              Math.min(inventory_qty, Number(e.target.value))
+                            )
+                          }
+                          className="w-20 p-1 border border-gray-300 rounded text-center"
+                        />
+                      </td>
+                    </tr>
+                  );
+                }
+              )}
             </tbody>
           </table>
         </div>
 
+        {/* Payment & Location */}
         <div className="mb-4">
           <label className="block text-sm font-semibold text-gray-700 mb-1">
             Payment Method
@@ -229,7 +249,7 @@ const CashierForm = () => {
         <button
           type="submit"
           disabled={submitting}
-          className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
+          className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 disabled:opacity-50"
         >
           {submitting ? "Processing..." : "Record Sale"}
         </button>

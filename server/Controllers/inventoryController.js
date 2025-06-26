@@ -2,6 +2,7 @@ import Mobile from "../models/Mobile.js";
 import Laptop from "../models/Laptop.js";
 import Tablet from "../models/Tablet.js";
 import Addon from "../models/AddOn.js";
+import Device from "../models/BaseDevice.js";
 
 const aggregateInventory = async (Model) => {
   const result = await Model.aggregate([
@@ -89,5 +90,37 @@ export const getInventorySummary = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Error fetching inventory summary", error: err.message });
+  }
+};
+
+export const getInventoryTurnaroundTimes = async (req, res) => {
+  try {
+    const devices = await Device.find();
+
+    const turnaroundList = devices
+      .map((device) => {
+        const sold = device.sold_qty || 0;
+        const inventory = device.inventory_qty || 0;
+
+        // Avoid division by zero
+        const ratio = sold > 0 ? inventory / sold : Infinity;
+
+        return {
+          name: device.name,
+          turnaround_ratio: ratio,
+          sold_qty: sold,
+          inventory_qty: inventory,
+        };
+      })
+      .filter((d) => isFinite(d.turnaround_ratio)) // Remove unsold items
+      .sort((a, b) => a.turnaround_ratio - b.turnaround_ratio)
+      .slice(0, 5);
+
+    res.json({ turnaround: turnaroundList });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to get inventory turnaround times",
+      error: err.message,
+    });
   }
 };

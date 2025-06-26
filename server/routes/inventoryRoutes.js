@@ -5,6 +5,7 @@ import {
   getTabletInventorySummary,
   getAddonInventorySummary,
   getInventorySummary,
+  getInventoryTurnaroundTimes,
 } from "../Controllers/inventoryController.js"
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.get("/addon", getAddonInventorySummary);
 
 // GET overall inventory summary across devices (mobile, laptop, tablet)
 router.get("/summary", getInventorySummary);
+router.get("/turnaround-times", getInventoryTurnaroundTimes);
 
 export default router;

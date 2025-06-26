@@ -36,6 +36,11 @@ const OwnerDashboard = () => {
   const [error, setError] = useState(null);
   const [monthlySale, setMonthlySale] = useState(null);
   const [timeRange, setTimeRange] = useState("month");
+  const [totalProfit, setTotalProfit] = useState(0);
+  const [avgBasketValue, setAvgBasketValue] = useState(0);
+  const [topProfitMakers, setTopProfitMakers] = useState([]);
+  const [topSellers, setTopSellers] = useState([]);
+  const [turnaroundTimes, setTurnaroundTimes] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -59,6 +64,21 @@ const OwnerDashboard = () => {
         );
         const MonthlySaleRes = await axios.get(
           "http://localhost:5000/api/sales"
+        );
+        const profitRes = await axios.get(
+          "http://localhost:5000/api/sales/analytics/total-profit"
+        );
+        const basketRes = await axios.get(
+          "http://localhost:5000/api/sales/analytics/avg-basket-value"
+        );
+        const topProfitRes = await axios.get(
+          "http://localhost:5000/api/sales/analytics/top-profit-makers"
+        );
+        const topSellersRes = await axios.get(
+          "http://localhost:5000/api/sales/analytics/top-sellers"
+        );
+        const turnaroundRes = await axios.get(
+          "http://localhost:5000/api/inventory/turnaround-times"
         );
 
         const catMap = {
@@ -128,6 +148,11 @@ const OwnerDashboard = () => {
         setInventoryData(combinedInventory);
         setCorrelationData(correlationRes.data);
         setRevenuePieData(revenueRes.data);
+        setTotalProfit(profitRes.data.total_profit);
+        setAvgBasketValue(basketRes.data.avg_basket_value);
+        setTopProfitMakers(topProfitRes.data.top || []);
+        setTopSellers(topSellersRes.data.top || []);
+        setTurnaroundTimes(turnaroundRes.data.turnaround || []);
         //setMonthlySale(monthlyFormatted);
         setError(null);
       } catch (err) {
@@ -290,6 +315,129 @@ const OwnerDashboard = () => {
           </BarChart>
         </ResponsiveContainer>
       </section>
+
+      <section className="mb-12">
+  <h2 className="text-2xl font-semibold mb-4 text-indigo-800">
+    Financial Highlights
+  </h2>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="bg-white rounded-lg shadow p-6">
+      <h3 className="text-lg font-semibold text-indigo-600">Total Profit</h3>
+      <p className="text-2xl mt-2 font-bold text-green-600">
+        {formatCurrency(totalProfit)}
+      </p>
+    </div>
+    <div className="bg-white rounded-lg shadow p-6">
+      <h3 className="text-lg font-semibold text-indigo-600">
+        Avg. Basket Value
+      </h3>
+      <p className="text-2xl mt-2 font-bold text-blue-600">
+        {formatCurrency(avgBasketValue)}
+      </p>
+    </div>
+  </div>
+</section>
+<section className="mb-12">
+  <h2 className="text-2xl font-semibold mb-4 text-indigo-800">
+    Top Profit Makers
+  </h2>
+  <ResponsiveContainer width="100%" height={300}>
+    <BarChart
+      data={topProfitMakers}
+      layout="vertical"
+      margin={{ top: 5, right: 20, left: 40, bottom: 5 }}
+    >
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis type="number" />
+      <YAxis dataKey="name" type="category" width={150} />
+      <Tooltip formatter={(val) => formatCurrency(val)} />
+      <Bar dataKey="profit" fill="#10B981" />
+    </BarChart>
+  </ResponsiveContainer>
+</section>
+
+
+<section className="mb-12">
+  <h2 className="text-2xl font-semibold mb-6 text-indigo-800 text-center">
+    🔥 Top Sellers Leaderboard
+  </h2>
+  <div className="bg-white shadow-lg rounded-xl overflow-hidden">
+    <ul className="divide-y divide-gray-200">
+      {topSellers.map((item, index) => (
+        <li
+          key={item.name}
+          className="flex items-center justify-between p-4 hover:bg-indigo-50 transition-all duration-200"
+        >
+          <div className="flex items-center space-x-4">
+            <div className="bg-indigo-100 text-indigo-800 rounded-full h-10 w-10 flex items-center justify-center font-bold text-lg">
+              {index + 1}
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-gray-800">
+                {item.name}
+              </p>
+              <p className="text-sm text-gray-500">Bestselling product</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xl font-bold text-green-600">
+              {item.units_sold} 
+              <span className="text-sm font-medium text-gray-500 ml-1">
+                units
+              </span>
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+
+<section className="mb-12">
+  <h2 className="text-3xl font-semibold mb-6 text-center text-indigo-800">
+    📦 Inventory Turnaround Times
+  </h2>
+  <div className="overflow-x-auto shadow-lg rounded-xl bg-white">
+    <table className="min-w-full divide-y divide-gray-200 text-sm">
+      <thead className="bg-indigo-600 text-white uppercase tracking-wider text-xs">
+        <tr>
+          <th className="px-6 py-3 text-left">Device</th>
+          <th className="px-6 py-3 text-left">Sold Qty</th>
+          <th className="px-6 py-3 text-left">Inventory Qty</th>
+          <th className="px-6 py-3 text-left">Turnaround Ratio</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-100">
+        {turnaroundTimes.map((item, idx) => (
+          <tr
+            key={idx}
+            className="hover:bg-indigo-50 transition duration-200"
+          >
+            <td className="px-6 py-4 font-medium text-gray-800">
+              {item.name}
+            </td>
+            <td className="px-6 py-4 text-gray-700">{item.sold_qty}</td>
+            <td className="px-6 py-4 text-gray-700">{item.inventory_qty}</td>
+            <td
+              className={`px-6 py-4 font-semibold ${
+                item.turnaround_ratio > 1
+                  ? "text-green-600"
+                  : item.turnaround_ratio > 0.5
+                  ? "text-yellow-600"
+                  : "text-red-600"
+              }`}
+            >
+              {item.turnaround_ratio.toFixed(2)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
 
       {/* Correlation Heatmap */}
       <section className="mb-12">

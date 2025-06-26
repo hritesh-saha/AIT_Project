@@ -1,5 +1,5 @@
 import express from "express";
-import { accessoryCorrelation, createSale, getAllSales, getRealTimeSalesAnalytics, getRevenueDistribution } from "../Controllers/salesController.js"
+import { accessoryCorrelation, createSale, getAllSales, getAvgBasketValue, getRealTimeSalesAnalytics, getRevenueDistribution, getTopProfitMakers, getTopSellers, getTotalProfit } from "../Controllers/salesController.js"
 
 const router = express.Router();
 
@@ -15,5 +15,10 @@ router.get("/analytics/realtime", getRealTimeSalesAnalytics);
 router.get("/correlation-analytics", accessoryCorrelation);
 
 router.get("/analytics/revenue-distribution", getRevenueDistribution);
+
+router.get("/analytics/total-profit", getTotalProfit);
+router.get("/analytics/avg-basket-value", getAvgBasketValue);
+router.get("/analytics/top-profit-makers", getTopProfitMakers);
+router.get("/analytics/top-sellers", getTopSellers);
 
 export default router;
