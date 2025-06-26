@@ -19,13 +19,14 @@ const AuthForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Send role along with username and password to backend
+      // Send role along with credentials
       const { data } = await axios.post("http://localhost:5000/api/users/login", form);
 
       setMessage(data.message);
       localStorage.setItem("token", data.token);
+      localStorage.setItem("role", form.role); // 🔒 Save role for access control
 
-      // Navigate based on selected role in the form (or you can trust backend role)
+      // Navigate based on role
       switch (form.role) {
         case "owner":
           navigate("/owner-dashboard");
@@ -83,7 +84,7 @@ const AuthForm = () => {
 
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition"
+          className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition cursor-pointer"
         >
           Login
         </button>

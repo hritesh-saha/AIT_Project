@@ -2,6 +2,7 @@ import Mobile from "../models/Mobile.js";
 import Laptop from "../models/Laptop.js";
 import Tablet from "../models/Tablet.js";
 import Device from "../models/BaseDevice.js";
+import Addon from "../models/AddOn.js";
 
 const deviceMap = {
   mobile: Mobile,
@@ -77,7 +78,8 @@ export const getDevices = async (req, res) => {
         //.limit(parseInt(limit));
       const tablets = await Tablet.find(manufacturer ? { manufacturer } : {})
         //.limit(parseInt(limit));
-      devices = [...mobiles, ...laptops, ...tablets];
+      const addons = await Addon.find(manufacturer ? { manufacturer } : {})
+      devices = [...mobiles, ...laptops, ...tablets, ...addons];
     }
 
     res.json(devices);

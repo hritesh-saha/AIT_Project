@@ -88,7 +88,7 @@ const OwnerCashierManager = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-full mx-auto p-6">
       <OwnerNavbar/>
       <h2 className="text-3xl font-bold mb-6 text-center">🧑‍💼 Cashier Management</h2>
 

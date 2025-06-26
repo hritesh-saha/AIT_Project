@@ -97,7 +97,7 @@ const OwnerDeviceManager = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-full mx-auto p-6">
       <OwnerNavbar />
       <h2 className="text-2xl font-bold mb-4 mt-6">Owner Device Management</h2>
 
