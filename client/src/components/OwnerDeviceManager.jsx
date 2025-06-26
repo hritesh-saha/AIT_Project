@@ -27,7 +27,7 @@ const OwnerDeviceManager = () => {
 
   const fetchDevices = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/devices");
+      const res = await axios.get("https://ait-project-backend.vercel.app/api/devices");
       setDevices(res.data);
       setMessage("");
     } catch (err) {
@@ -40,7 +40,7 @@ const OwnerDeviceManager = () => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/devices",
+        "https://ait-project-backend.vercel.app/api/devices",
         formData
       );
       setMessage(res.data.message || "Device added successfully");
@@ -68,7 +68,7 @@ const OwnerDeviceManager = () => {
 
     try {
       const res = await axios.patch(
-        `http://localhost:5000/api/devices/${actionUid}/stock`,
+        `https://ait-project-backend.vercel.app/api/devices/${actionUid}/stock`,
         stockUpdate
       );
       setMessage(res.data.message || "Stock updated successfully");
@@ -86,7 +86,7 @@ const OwnerDeviceManager = () => {
 
     try {
       const res = await axios.delete(
-        `http://localhost:5000/api/devices/${uid}`
+        `https://ait-project-backend.vercel.app/api/devices/${uid}`
       );
       setMessage(res.data.message || "Device deleted successfully");
       fetchDevices();

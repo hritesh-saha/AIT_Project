@@ -22,7 +22,7 @@ const SalesTrendChart = ({ horizon = 7, title = "📈 Sales Forecast" }) => {
     const fetchSales = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:5000/api/sales");
+        const res = await axios.get("https://ait-project-backend.vercel.app/api/sales");
         setRawSales(res.data);
         setError(null);
       } catch (err) {

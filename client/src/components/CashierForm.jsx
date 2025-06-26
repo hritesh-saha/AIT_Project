@@ -21,7 +21,7 @@ const CashierForm = () => {
   const fetchDevices = async () => {
     try {
       setLoadingDevices(true);
-      const response = await axios.get("http://localhost:5000/api/devices");
+      const response = await axios.get("https://ait-project-backend.vercel.app/api/devices");
       setDevices(response.data);
     } catch (err) {
       setError("Failed to fetch devices");
@@ -76,7 +76,7 @@ const CashierForm = () => {
         location,
       };
 
-      const response = await axios.post("http://localhost:5000/api/sales", payload);
+      const response = await axios.post("https://ait-project-backend.vercel.app/api/sales", payload);
       setSubmitMessage({ type: "success", text: response.data.message });
 
       setSelectedItems([]);

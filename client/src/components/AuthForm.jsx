@@ -20,7 +20,7 @@ const AuthForm = () => {
     e.preventDefault();
     try {
       // Send role along with credentials
-      const { data } = await axios.post("http://localhost:5000/api/users/login", form);
+      const { data } = await axios.post("https://ait-project-backend.vercel.app/api/users/login", form);
 
       setMessage(data.message);
       localStorage.setItem("token", data.token);

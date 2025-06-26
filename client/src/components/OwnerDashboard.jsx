@@ -48,37 +48,37 @@ const OwnerDashboard = () => {
         setLoading(true);
 
         const salesRes = await axios.get(
-          "http://localhost:5000/api/sales/analytics/realtime"
+          "https://ait-project-backend.vercel.app/api/sales/analytics/realtime"
         );
         const inventoryRes = await axios.get(
-          "http://localhost:5000/api/inventory/summary"
+          "https://ait-project-backend.vercel.app/api/inventory/summary"
         );
         const addonRes = await axios.get(
-          "http://localhost:5000/api/inventory/addon"
+          "https://ait-project-backend.vercel.app/api/inventory/addon"
         );
         const correlationRes = await axios.get(
-          "http://localhost:5000/api/sales/correlation-analytics"
+          "https://ait-project-backend.vercel.app/api/sales/correlation-analytics"
         );
         const revenueRes = await axios.get(
-          "http://localhost:5000/api/sales/analytics/revenue-distribution"
+          "https://ait-project-backend.vercel.app/api/sales/analytics/revenue-distribution"
         );
         const MonthlySaleRes = await axios.get(
-          "http://localhost:5000/api/sales"
+          "https://ait-project-backend.vercel.app/api/sales"
         );
         const profitRes = await axios.get(
-          "http://localhost:5000/api/sales/analytics/total-profit"
+          "https://ait-project-backend.vercel.app/api/sales/analytics/total-profit"
         );
         const basketRes = await axios.get(
-          "http://localhost:5000/api/sales/analytics/avg-basket-value"
+          "https://ait-project-backend.vercel.app/api/sales/analytics/avg-basket-value"
         );
         const topProfitRes = await axios.get(
           "http://localhost:5000/api/sales/analytics/top-profit-makers"
         );
         const topSellersRes = await axios.get(
-          "http://localhost:5000/api/sales/analytics/top-sellers"
+          "https://ait-project-backend.vercel.app/api/sales/analytics/top-sellers"
         );
         const turnaroundRes = await axios.get(
-          "http://localhost:5000/api/inventory/turnaround-times"
+          "https://ait-project-backend.vercel.app/api/inventory/turnaround-times"
         );
 
         const catMap = {

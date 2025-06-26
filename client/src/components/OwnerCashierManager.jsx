@@ -25,7 +25,7 @@ const OwnerCashierManager = () => {
 
   const fetchCashiers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users?role=cashier");
+      const res = await axios.get("https://ait-project-backend.vercel.app/api/users?role=cashier");
       setCashiers(res.data);
     } catch (err) {
       console.error("Failed to fetch cashiers", err);
@@ -41,7 +41,7 @@ const OwnerCashierManager = () => {
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/users/signup", {
+      const res = await axios.post("https://ait-project-backend.vercel.app/api/users/signup", {
         username,
         password,
         role: "cashier",
@@ -56,7 +56,7 @@ const OwnerCashierManager = () => {
 
   const handleDeleteCashier = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/users/${id}`);
+      await axios.delete(`https://ait-project-backend.vercel.app/api/users/${id}`);
       setMessage("🗑️ Cashier deleted");
       fetchCashiers();
     } catch (err) {
@@ -73,7 +73,7 @@ const OwnerCashierManager = () => {
   const handleUpdateCashier = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.patch(`http://localhost:5000/api/users/${editingUsername}`, {
+      const res = await axios.patch(`https://ait-project-backend.vercel.app/api/users/${editingUsername}`, {
         password: editFormData.password,
         role: editFormData.role,
       });
