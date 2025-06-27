@@ -20,6 +20,7 @@ const OwnerDeviceManager = () => {
     action: "add",
   });
   const [message, setMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchDevices();
@@ -98,6 +99,27 @@ const OwnerDeviceManager = () => {
     }
   };
 
+  // Filter and reorder devices based on search query
+  const filteredDevices = React.useMemo(() => {
+    if (!searchQuery.trim()) return devices;
+
+    const lowerQuery = searchQuery.toLowerCase();
+
+    const matched = [];
+    const unmatched = [];
+
+    devices.forEach((dev) => {
+      const searchTarget = `${dev.name} ${dev.manufacturer} ${dev.uid}`.toLowerCase();
+      if (searchTarget.includes(lowerQuery)) {
+        matched.push(dev);
+      } else {
+        unmatched.push(dev);
+      }
+    });
+
+    return [...matched, ...unmatched];
+  }, [searchQuery, devices]);
+
   return (
     <div className="max-w-full mx-auto p-6">
       <OwnerNavbar />
@@ -107,14 +129,12 @@ const OwnerDeviceManager = () => {
 
       <form
         onSubmit={handleAddDevice}
-        className="bg-white shadow p-4 rounded mb-6"
+        className="bg-white shadow p-4 rounded mb-6 max-w-3xl mx-auto"
       >
         <h3 className="text-xl font-semibold mb-2">Add New Device</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block mb-1 text-sm font-medium">
-              Device Type
-            </label>
+            <label className="block mb-1 text-sm font-medium">Device Type</label>
             <select
               value={formData.device_type}
               onChange={(e) =>
@@ -131,9 +151,7 @@ const OwnerDeviceManager = () => {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium">
-              Device Name
-            </label>
+            <label className="block mb-1 text-sm font-medium">Device Name</label>
             <input
               type="text"
               className="p-2 border rounded w-full"
@@ -146,9 +164,7 @@ const OwnerDeviceManager = () => {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-medium">
-              Manufacturer
-            </label>
+            <label className="block mb-1 text-sm font-medium">Manufacturer</label>
             <input
               type="text"
               className="p-2 border rounded w-full"
@@ -204,73 +220,84 @@ const OwnerDeviceManager = () => {
         </button>
       </form>
 
-     <form
-  onSubmit={handleStockUpdate}
-  className="bg-white shadow-2xl p-6 rounded-2xl mb-8 border border-gray-200 w-full max-w-3xl mx-auto"
->
-  <h3 className="text-2xl font-bold text-indigo-700 mb-6">Update Stock</h3>
-
-  <div className="flex flex-wrap gap-6">
-    {/* Device UID */}
-    <div className="flex-1 min-w-[200px]">
-      <label className="block mb-2 text-sm font-semibold text-gray-700">Device UID</label>
-      <input
-        type="text"
-        className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none"
-        value={actionUid}
-        onChange={(e) => setActionUid(e.target.value)}
-        required
-      />
-    </div>
-
-    {/* Action */}
-    <div className="flex-1 min-w-[200px]">
-      <label className="block mb-2 text-sm font-semibold text-gray-700">Action</label>
-      <select
-        value={stockUpdate.action}
-        onChange={(e) =>
-          setStockUpdate({ ...stockUpdate, action: e.target.value })
-        }
-        className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none cursor-pointer"
+      <form
+        onSubmit={handleStockUpdate}
+        className="bg-white shadow-2xl p-6 rounded-2xl mb-8 border border-gray-200 w-full max-w-3xl mx-auto"
       >
-        <option value="add">Add</option>
-        <option value="subtract">Subtract</option>
-      </select>
-    </div>
+        <h3 className="text-2xl font-bold text-indigo-700 mb-6">Update Stock</h3>
 
-    {/* Quantity */}
-    <div className="flex-1 min-w-[200px]">
-      <label className="block mb-2 text-sm font-semibold text-gray-700">Quantity</label>
-      <input
-        type="number"
-        min="1"
-        className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none"
-        value={stockUpdate.quantity}
-        onChange={(e) =>
-          setStockUpdate({
-            ...stockUpdate,
-            quantity: parseInt(e.target.value, 10) || 1,
-          })
-        }
-        required
-      />
-    </div>
+        <div className="flex flex-wrap gap-6">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block mb-2 text-sm font-semibold text-gray-700">
+              Device UID
+            </label>
+            <input
+              type="text"
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+              value={actionUid}
+              onChange={(e) => setActionUid(e.target.value)}
+              required
+            />
+          </div>
 
-    {/* Submit Button */}
-   <div className="flex justify-center items-end w-full">
-  <button
-    type="submit"
-    className="bg-green-600 hover:bg-green-700 transition text-white font-semibold px-6 py-3 rounded-lg shadow-md"
-  >
-    Update Stock
-  </button>
-</div>
+          <div className="flex-1 min-w-[200px]">
+            <label className="block mb-2 text-sm font-semibold text-gray-700">
+              Action
+            </label>
+            <select
+              value={stockUpdate.action}
+              onChange={(e) =>
+                setStockUpdate({ ...stockUpdate, action: e.target.value })
+              }
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none cursor-pointer"
+            >
+              <option value="add">Add</option>
+              <option value="subtract">Subtract</option>
+            </select>
+          </div>
 
-  </div>
-</form>
+          <div className="flex-1 min-w-[200px]">
+            <label className="block mb-2 text-sm font-semibold text-gray-700">
+              Quantity
+            </label>
+            <input
+              type="number"
+              min="1"
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+              value={stockUpdate.quantity}
+              onChange={(e) =>
+                setStockUpdate({
+                  ...stockUpdate,
+                  quantity: parseInt(e.target.value, 10) || 1,
+                })
+              }
+              required
+            />
+          </div>
 
+          <div className="flex justify-center items-end w-full">
+            <button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700 transition text-white font-semibold px-6 py-3 rounded-lg shadow-md"
+            >
+              Update Stock
+            </button>
+          </div>
+        </div>
+      </form>
 
-      <div className="bg-white shadow rounded p-4">
+      {/* Search input */}
+      <div className="mb-4 max-w-3xl mx-auto">
+        <input
+          type="text"
+          placeholder="Search devices by UID, name, or manufacturer..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+        />
+      </div>
+
+      <div className="bg-white shadow rounded p-4 max-w-7xl mx-auto">
         <h3 className="text-xl font-semibold mb-4">Device List</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left">
@@ -288,14 +315,14 @@ const OwnerDeviceManager = () => {
               </tr>
             </thead>
             <tbody>
-              {devices.length === 0 ? (
+              {filteredDevices.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="py-4 text-center text-gray-500">
                     No devices found.
                   </td>
                 </tr>
               ) : (
-                devices.map((dev) => (
+                filteredDevices.map((dev) => (
                   <tr key={dev.uid} className="border-t">
                     <td className="px-4 py-2 flex items-center gap-2">
                       <span>{dev.uid}</span>
@@ -313,7 +340,6 @@ const OwnerDeviceManager = () => {
                         ? dev.manufacturer
                         : dev.name?.split(" ")[0] || "Unknown"}
                     </td>
-
                     <td className="px-4 py-2">{dev.device_type}</td>
                     <td className="px-4 py-2">
                       ₹{parseFloat(dev.final_price ?? dev.price).toFixed(2)}
