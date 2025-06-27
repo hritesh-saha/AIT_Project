@@ -191,6 +191,7 @@ const OwnerDashboard = () => {
     fetchDashboardData();
   }, [timeRange]);
 
+
   if (loading)
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
@@ -253,6 +254,7 @@ const OwnerDashboard = () => {
   const formatCurrency = (num) =>
     num.toLocaleString("en-US", { style: "currency", currency: "INR" });
 
+   console.log(salesChartData)
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-purple-200 p-8">
       <OwnerNavbar />
@@ -316,30 +318,80 @@ const OwnerDashboard = () => {
           </select>
         </div>
 
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart
-            data={salesChartData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="metric" />
-            <YAxis />
-            <Tooltip
-              formatter={(value, name) =>
-                name === "Total Revenue"
-                  ? formatCurrency(value)
-                  : value.toLocaleString()
-              }
-            />
-            <Legend />
-            <Bar
-              dataKey="value"
-              fill="#4F46E5"
-              barSize={60}
-              radius={[5, 5, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="flex gap-6 overflow-x-auto">
+  {/* Total Sales Chart */}
+  <div className="min-w-[350px]">
+    <ResponsiveContainer width="100%" height={250}>
+      <BarChart
+        data={salesChartData.filter(item => item.metric === "Total Sales")}
+        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="metric" />
+        <YAxis domain={[0, 50]} />
+        <Tooltip />
+        <Legend />
+        <Bar
+          dataKey="value"
+          name="Total Sales"
+          fill="#4F46E5"
+          barSize={40}
+          radius={[5, 5, 0, 0]}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+
+  {/* Total Items Sold Chart */}
+  <div className="min-w-[350px]">
+    <ResponsiveContainer width="100%" height={250}>
+      <BarChart
+        data={salesChartData.filter(item => item.metric === "Total Items Sold")}
+        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="metric" />
+        <YAxis domain={[0, 100]} />
+        <Tooltip />
+        <Legend />
+        <Bar
+          dataKey="value"
+          name="Items Sold"
+          fill="#6366F1"
+          barSize={40}
+          radius={[5, 5, 0, 0]}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+
+  {/* Total Revenue Chart */}
+  <div className="min-w-[350px]">
+    <ResponsiveContainer width="100%" height={250}>
+      <BarChart
+        data={salesChartData.filter(item => item.metric === "Total Revenue")}
+        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="metric" />
+        <YAxis
+          domain={[0, 1500000]}
+          tickFormatter={(val) => `₹${val / 1000}k`}
+        />
+        <Tooltip formatter={(val) => `₹${val.toLocaleString()}`} />
+        <Legend />
+        <Bar
+          dataKey="value"
+          name="Total Revenue"
+          fill="#10B981"
+          barSize={40}
+          radius={[5, 5, 0, 0]}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+</div>
+
       </section>
 
       <section className="mb-12">
