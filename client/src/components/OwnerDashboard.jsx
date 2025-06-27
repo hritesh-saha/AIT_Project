@@ -72,7 +72,7 @@ const OwnerDashboard = () => {
           "https://ait-project-backend.vercel.app/api/sales/analytics/avg-basket-value"
         );
         const topProfitRes = await axios.get(
-          "http://localhost:5000/api/sales/analytics/top-profit-makers"
+          "https://ait-project-backend.vercel.app/api/sales/analytics/top-profit-makers"
         );
         const topSellersRes = await axios.get(
           "https://ait-project-backend.vercel.app/api/sales/analytics/top-sellers"
