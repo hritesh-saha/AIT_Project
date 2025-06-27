@@ -204,64 +204,71 @@ const OwnerDeviceManager = () => {
         </button>
       </form>
 
-      <form
-        onSubmit={handleStockUpdate}
-        className="bg-white shadow p-4 rounded mb-6"
+     <form
+  onSubmit={handleStockUpdate}
+  className="bg-white shadow-2xl p-6 rounded-2xl mb-8 border border-gray-200 w-full max-w-3xl mx-auto"
+>
+  <h3 className="text-2xl font-bold text-indigo-700 mb-6">Update Stock</h3>
+
+  <div className="flex flex-wrap gap-6">
+    {/* Device UID */}
+    <div className="flex-1 min-w-[200px]">
+      <label className="block mb-2 text-sm font-semibold text-gray-700">Device UID</label>
+      <input
+        type="text"
+        className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+        value={actionUid}
+        onChange={(e) => setActionUid(e.target.value)}
+        required
+      />
+    </div>
+
+    {/* Action */}
+    <div className="flex-1 min-w-[200px]">
+      <label className="block mb-2 text-sm font-semibold text-gray-700">Action</label>
+      <select
+        value={stockUpdate.action}
+        onChange={(e) =>
+          setStockUpdate({ ...stockUpdate, action: e.target.value })
+        }
+        className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none cursor-pointer"
       >
-        <h3 className="text-xl font-semibold pb-2">Update Stock</h3>
-        <div className="flex gap-4 flex-wrap">
-          <div>
-            <label className="block mb-1 text-sm font-medium">Device UID</label>
-            <input
-              type="text"
-              className="p-2 border rounded w-full"
-              value={actionUid}
-              onChange={(e) => setActionUid(e.target.value)}
-              required
-            />
-          </div>
+        <option value="add">Add</option>
+        <option value="subtract">Subtract</option>
+      </select>
+    </div>
 
-          <div>
-            <label className="block mb-1 text-sm font-medium">Action</label>
-            <select
-              value={stockUpdate.action}
-              onChange={(e) =>
-                setStockUpdate({ ...stockUpdate, action: e.target.value })
-              }
-              className="p-2 border rounded w-full cursor-pointer"
-            >
-              <option value="add">Add</option>
-              <option value="subtract">Subtract</option>
-            </select>
-          </div>
+    {/* Quantity */}
+    <div className="flex-1 min-w-[200px]">
+      <label className="block mb-2 text-sm font-semibold text-gray-700">Quantity</label>
+      <input
+        type="number"
+        min="1"
+        className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-400 outline-none"
+        value={stockUpdate.quantity}
+        onChange={(e) =>
+          setStockUpdate({
+            ...stockUpdate,
+            quantity: parseInt(e.target.value, 10) || 1,
+          })
+        }
+        required
+      />
+    </div>
 
-          <div>
-            <label className="block mb-1 text-sm font-medium">Quantity</label>
-            <input
-              type="number"
-              min="1"
-              className="p-2 border rounded w-full"
-              value={stockUpdate.quantity}
-              onChange={(e) =>
-                setStockUpdate({
-                  ...stockUpdate,
-                  quantity: parseInt(e.target.value, 10) || 1,
-                })
-              }
-              required
-            />
-          </div>
+    {/* Submit Button */}
+   <div className="flex justify-center items-end w-full">
+  <button
+    type="submit"
+    className="bg-green-600 hover:bg-green-700 transition text-white font-semibold px-6 py-3 rounded-lg shadow-md"
+  >
+    Update Stock
+  </button>
+</div>
 
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
-            >
-              Update Stock
-            </button>
-          </div>
-        </div>
-      </form>
+  </div>
+</form>
+
 
       <div className="bg-white shadow rounded p-4">
         <h3 className="text-xl font-semibold mb-4">Device List</h3>
