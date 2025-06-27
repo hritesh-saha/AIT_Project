@@ -324,7 +324,10 @@ const OwnerDeviceManager = () => {
               ) : (
                 filteredDevices.map((dev) => (
                   <tr key={dev.uid} className="border-t">
-                    <td className="px-4 py-2 flex items-center gap-2">
+                    <td
+                    className={`px-4 py-2 flex items-center gap-2 ${
+    dev.inventory_qty < 2 ? "text-red-600 font-semibold" : ""
+  }`}>
                       <span>{dev.uid}</span>
                       <button
                         title="Use this UID to update stock"
@@ -334,21 +337,35 @@ const OwnerDeviceManager = () => {
                         📋
                       </button>
                     </td>
-                    <td className="px-4 py-2">{dev.name}</td>
-                    <td className="px-4 py-2">
+                    <td className={`px-4 py-2 ${
+    dev.inventory_qty < 2 ? "text-red-600 font-semibold" : ""
+  }`}>{dev.name}</td>
+                    <td className={`px-4 py-2 ${
+    dev.inventory_qty < 2 ? "text-red-600 font-semibold" : ""
+  }`}>
                       {dev.manufacturer && dev.manufacturer.trim() !== ""
                         ? dev.manufacturer
                         : dev.name?.split(" ")[0] || "Unknown"}
                     </td>
-                    <td className="px-4 py-2">{dev.device_type}</td>
-                    <td className="px-4 py-2">
+                    <td className={`px-4 py-2 ${
+    dev.inventory_qty < 2 ? "text-red-600 font-semibold" : ""
+  }`}>{dev.device_type}</td>
+                    <td className={`px-4 py-2 ${
+    dev.inventory_qty < 2 ? "text-red-600 font-semibold" : ""
+  }`}>
                       ₹{parseFloat(dev.final_price ?? dev.price).toFixed(2)}
                     </td>
-                    <td className="px-4 py-2">{dev.inventory_qty}</td>
-                    <td className="px-2 py-2">
+                    <td className={`px-4 py-2 ${
+    dev.inventory_qty < 2 ? "text-red-600 font-semibold" : ""
+  }`}>{dev.inventory_qty}</td>
+                    <td className={`px-2 py-2 ${
+    dev.inventory_qty < 2 ? "text-red-600 font-semibold" : ""
+  }`}>
                       {dev.date?.split("T")[0] || dev.date}
                     </td>
-                    <td className="px-4 py-2">{dev.time || "—"}</td>
+                    <td className={`px-4 py-2 ${
+    dev.inventory_qty < 2 ? "text-red-600 font-semibold" : ""
+  }`}>{dev.time || "—"}</td>
                     <td className="px-4 py-2">
                       <button
                         onClick={() => handleDeleteDevice(dev.uid)}
