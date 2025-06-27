@@ -47,39 +47,65 @@ const OwnerDashboard = () => {
       try {
         setLoading(true);
 
-        const salesRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/sales/analytics/realtime"
-        );
-        const inventoryRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/inventory/summary"
-        );
-        const addonRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/inventory/addon"
-        );
-        const correlationRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/sales/correlation-analytics"
-        );
-        const revenueRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/sales/analytics/revenue-distribution"
-        );
-        const MonthlySaleRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/sales"
-        );
-        const profitRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/sales/analytics/total-profit"
-        );
-        const basketRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/sales/analytics/avg-basket-value"
-        );
-        const topProfitRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/sales/analytics/top-profit-makers"
-        );
-        const topSellersRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/sales/analytics/top-sellers"
-        );
-        const turnaroundRes = await axios.get(
-          "https://ait-project-backend.vercel.app/api/inventory/turnaround-times"
-        );
+        // const salesRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/sales/analytics/realtime"
+        // );
+        // const inventoryRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/inventory/summary"
+        // );
+        // const addonRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/inventory/addon"
+        // );
+        // const correlationRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/sales/correlation-analytics"
+        // );
+        // const revenueRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/sales/analytics/revenue-distribution"
+        // );
+        // const MonthlySaleRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/sales"
+        // );
+        // const profitRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/sales/analytics/total-profit"
+        // );
+        // const basketRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/sales/analytics/avg-basket-value"
+        // );
+        // const topProfitRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/sales/analytics/top-profit-makers"
+        // );
+        // const topSellersRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/sales/analytics/top-sellers"
+        // );
+        // const turnaroundRes = await axios.get(
+        //   "https://ait-project-backend.vercel.app/api/inventory/turnaround-times"
+        // );
+
+        const [
+        salesRes,
+        inventoryRes,
+        addonRes,
+        correlationRes,
+        revenueRes,
+        MonthlySaleRes,
+        profitRes,
+        basketRes,
+        topProfitRes,
+        topSellersRes,
+        turnaroundRes,
+      ] = await Promise.all([
+        axios.get("https://ait-project-backend.vercel.app/api/sales/analytics/realtime"),
+        axios.get("https://ait-project-backend.vercel.app/api/inventory/summary"),
+        axios.get("https://ait-project-backend.vercel.app/api/inventory/addon"),
+        axios.get("https://ait-project-backend.vercel.app/api/sales/correlation-analytics"),
+        axios.get("https://ait-project-backend.vercel.app/api/sales/analytics/revenue-distribution"),
+        axios.get("https://ait-project-backend.vercel.app/api/sales"),
+        axios.get("https://ait-project-backend.vercel.app/api/sales/analytics/total-profit"),
+        axios.get("https://ait-project-backend.vercel.app/api/sales/analytics/avg-basket-value"),
+        axios.get("https://ait-project-backend.vercel.app/api/sales/analytics/top-profit-makers"),
+        axios.get("https://ait-project-backend.vercel.app/api/sales/analytics/top-sellers"),
+        axios.get("https://ait-project-backend.vercel.app/api/inventory/turnaround-times"),
+      ]);
 
         const catMap = {
           Headphone: "headphone",

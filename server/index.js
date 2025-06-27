@@ -10,6 +10,7 @@ import salesRoutes from './routes/salesRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
 import connectDB from './configs/db.js';
+import compression from "compression";
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(cors({
   origin: '*'
 }));// <-- allow all origins
 app.use(express.json());
+app.use(compression());
 
 // ✅ Routes
 app.use('/api/users', userRoutes);
