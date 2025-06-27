@@ -302,7 +302,7 @@ const OwnerDeviceManager = () => {
                     <td className="px-4 py-2">{dev.manufacturer}</td>
                     <td className="px-4 py-2">{dev.device_type}</td>
                     <td className="px-4 py-2">
-                      ₹{parseFloat(dev.final_price).toFixed(2)}
+                      ₹{parseFloat(dev.final_price ?? dev.price).toFixed(2)}
                     </td>
                     <td className="px-4 py-2">{dev.inventory_qty}</td>
                     <td className="px-2 py-2">
