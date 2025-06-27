@@ -27,7 +27,9 @@ const OwnerDeviceManager = () => {
 
   const fetchDevices = async () => {
     try {
-      const res = await axios.get("https://ait-project-backend.vercel.app/api/devices");
+      const res = await axios.get(
+        "https://ait-project-backend.vercel.app/api/devices"
+      );
       setDevices(res.data);
       setMessage("");
     } catch (err) {
@@ -299,7 +301,12 @@ const OwnerDeviceManager = () => {
                       </button>
                     </td>
                     <td className="px-4 py-2">{dev.name}</td>
-                    <td className="px-4 py-2">{dev.manufacturer}</td>
+                    <td className="px-4 py-2">
+                      {dev.manufacturer && dev.manufacturer.trim() !== ""
+                        ? dev.manufacturer
+                        : dev.name?.split(" ")[0] || "Unknown"}
+                    </td>
+
                     <td className="px-4 py-2">{dev.device_type}</td>
                     <td className="px-4 py-2">
                       ₹{parseFloat(dev.final_price ?? dev.price).toFixed(2)}
