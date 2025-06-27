@@ -225,7 +225,7 @@ const OwnerDashboard = () => {
   const accessoryList = ["charger", "earphones", "mouse", "bag", "cover"];
 
   const formatCurrency = (num) =>
-    num.toLocaleString("en-US", { style: "currency", currency: "USD" });
+    num.toLocaleString("en-US", { style: "currency", currency: "INR" });
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-purple-200 p-8">
@@ -258,7 +258,7 @@ const OwnerDashboard = () => {
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
-            <YAxis tickFormatter={(val) => `$${(val / 1000).toFixed(1)}k`} />
+            <YAxis tickFormatter={(val) => `₹${(val / 1000).toFixed(1)}k`} />
             <Tooltip formatter={(value) => formatCurrency(value)} />
             <Line
               type="monotone"
